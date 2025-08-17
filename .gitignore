@@ -1,8 +1,10 @@
 /*
 
 !/shader
+!/Editor
 !LICENSE
 !README.md
 !/.github
 !/.forgejo
 !.gitignore
+!package.json

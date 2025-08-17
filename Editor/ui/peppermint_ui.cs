@@ -21,8 +21,13 @@ public class peppermint_ui : ShaderGUI
         public int depth;
     }
 
+    private class Prop
+    {
+        public bool SingleLineTexture = false;
+    }
+
+    private Dictionary<string, Prop> propAttributes = new Dictionary<string, Prop>();
     private static Dictionary<Material, Dictionary<string, bool>> foldoutStates = new Dictionary<Material, Dictionary<string, bool>>();
-    private Dictionary<Shader, Folder> cache = new Dictionary<Shader, Folder>();
 
     private static GUIStyle FoldoutStyle()
     {
@@ -102,6 +107,26 @@ public class peppermint_ui : ShaderGUI
         return root;
     }
 
+    private void MarkAttributes(MaterialEditor editor, MaterialProperty[] props)
+    {
+        Material mat = (Material)editor.target;
+        var shader = mat.shader;
+        int count = shader.GetPropertyCount();
+
+        for (int i = 0; i < count; i++)
+        {
+            var prop = props[i];
+            var name = shader.GetPropertyName(i);
+            var attrs = shader.GetPropertyAttributes(i);
+
+            if (attrs.Contains("SingleLineTexture") && !propAttributes.ContainsKey(name))
+            {
+                propAttributes.Add(name, new Prop{ SingleLineTexture = true });
+                i++;
+            }
+        }
+    }
+
     private void DrawFolder(MaterialEditor editor, Material material, Folder folder, int indent)
     {
         if (folder.name != "Root")
@@ -129,9 +154,18 @@ public class peppermint_ui : ShaderGUI
                 DrawFolder(editor, material, child, outdent);
 
         foreach (var prop in folder.properties)
+        {
+            var parsedName = prop.displayName.Split('/')[^1];
             using (new GUILayout.VerticalScope(Wrapper()))
                 using (new GUILayout.HorizontalScope(PropertyStyle(indent)))
-                    editor.ShaderProperty(prop, prop.displayName.Split('/')[^1]);
+                    if (propAttributes.ContainsKey(prop.name))
+                    {
+                        if (propAttributes[prop.name].SingleLineTexture == true)
+                            editor.TexturePropertySingleLine(new GUIContent(parsedName), prop);
+                    }
+                    else
+                        editor.ShaderProperty(prop, parsedName);
+        }
     }
 
     public void ToggleKeyword(bool condition, string keyword, Material target)
@@ -157,6 +191,8 @@ public class peppermint_ui : ShaderGUI
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
     {
         Material material = materialEditor.target as Material;
+
+        MarkAttributes(materialEditor, properties);
 
         UpdateKeywords(materialEditor, properties, material);
 

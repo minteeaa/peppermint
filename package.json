@@ -1,0 +1,22 @@
+{
+  "name": "pw.mintea.peppermint",
+  "displayName": "Peppermint",
+  "description": "Filament based PBR shader for Unity's BIRP",
+  "version": "1.0.0",
+  "unity": "2022.3",
+  "author": {
+    "name": "mintea",
+    "url": "https://codeberg.org/mintea"
+  },
+  "documentationUrl": "https://codeberg.org/mintea/peppermint/src/branch/main/README.md",
+  "changelogUrl": "hhttps://codeberg.org/mintea/peppermint/tags",
+  "gitDependencies": {},
+  "vpmDependencies": {},
+  "keywords": [
+    "shader",
+    "pbr",
+    "filament"
+  ],
+  "license": "MIT",
+  "type": "Shader"
+}

@@ -6,11 +6,11 @@ Shader "mintea/peppermint"
         [HideInInspector] _samplerDefault("", 2D) = "white" {}
         [HideInInspector] _ditherPattern("Dither", 2D) = "white" {}
 
-		[SingleLineTexture] _ORMTexture("Main/Textures/ORM", 2D) = "white" {}
+		[SingleLineTexture]_ORMTexture("Main/Textures/ORM", 2D) = "white" {}
         [SingleLineTexture][Normal] _NormalMap("Main/Textures/Normal Map", 2D) = "bump" {}
         [hdr]_DiffuseHDR ("Main/Textures/Diffuse Color", color) = (1,1,1,1)
-        [SingleLineTexture] _DiffuseAlpha("Main/Textures/Diffuse", 2D) = "white" {}
-        [SingleLineTexture] _AlphaTex("Main/Textures/Alpha", 2D) = "white" {}
+        [SingleLineTexture]_DiffuseAlpha("Main/Textures/Diffuse", 2D) = "white" {}
+        [SingleLineTexture]_AlphaTex("Main/Textures/Alpha", 2D) = "white" {}
 
 		_AOStrength("Main/AO Strength", Range(0, 1)) = 1
         _RoughnessStrength("Main/Roughness Strength", Range(0, 1)) = 1
@@ -20,7 +20,7 @@ Shader "mintea/peppermint"
 
         [Toggle] _EmissionsEnable("Emission/Enable", Float) = 0
         [hdr]_EmissionColor ("Emission/Color", color) = (1,1,1,1)
-        [SingleLineTexture] _EmissionMask("Emission/Mask", 2D) = "white" {}
+        [SingleLineTexture]_EmissionMask("Emission/Mask", 2D) = "white" {}
         _EmissionStrength("Emission/Strength", Range(0, 1)) = 0
 
         _LightVolumesBias("Extra/Light Volumes Bias", Float) = 0
