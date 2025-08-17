@@ -2,9 +2,14 @@
 
 !/shader
 !/Editor
+!shader.meta
+!Editor.meta
 !LICENSE
+!LICENSE.meta
 !README.md
+!README.md.meta
 !/.github
 !/.forgejo
 !.gitignore
 !package.json
+!package.json.meta
