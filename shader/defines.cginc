@@ -126,12 +126,12 @@ struct v2f
 
 #include "UnityCG.cginc"
 #include "./third_party/VRCLightVolumes/LightVolumes.cginc"
-#include "thirdparty.cginc"
+#include "./third_party/LTCGI.cginc"
 #include "./util/util.cginc"
 #include "input.cginc"
 #include "brdf.cginc"
 #include "vert.cginc"
-#if defined(SHADOWCASTER_PASS)
+#if defined(PASS_SHDW)
     #include "shadowcaster.cginc"
 #else
     #include "frag.cginc"
