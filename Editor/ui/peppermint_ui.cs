@@ -146,15 +146,6 @@ public class peppermint_ui : ShaderGUI
         return root;
     }
 
-    public static Rect FullWidthRect(float height = 0f)
-    {
-        if (height <= 0f) height = EditorGUIUtility.singleLineHeight;
-        Rect r = EditorGUILayout.GetControlRect(false, height, GUILayout.ExpandWidth(true));
-        r.xMin = 0;
-        r.xMax = EditorGUIUtility.currentViewWidth;
-        return r;
-    }
-
     private void MarkAttributes(MaterialEditor editor, MaterialProperty[] props)
     {
         Material mat = (Material)editor.target;
