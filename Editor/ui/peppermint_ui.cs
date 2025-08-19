@@ -29,38 +29,77 @@ public class peppermint_ui : ShaderGUI
     private Dictionary<string, Prop> propAttributes = new Dictionary<string, Prop>();
     private static Dictionary<Material, Dictionary<string, bool>> foldoutStates = new Dictionary<Material, Dictionary<string, bool>>();
 
-    private static GUIStyle FoldoutStyle()
+    bool PepperFoldout(ref bool expanded, string label, GUIStyle background, GUIStyle foldout, int indent)
+    {
+        GUILayout.Space(background.margin.top);
+        Rect rect = EditorGUILayout.GetControlRect();
+
+        Rect bgRect = rect;
+        bgRect.xMin = 10 + indent;
+        bgRect.xMax = EditorGUIUtility.currentViewWidth - 10;
+
+        bgRect.xMin += background.margin.left;
+        bgRect.xMax -= background.margin.right;
+
+        bgRect.yMin -= background.padding.top;
+        bgRect.yMax += background.padding.bottom;
+
+        GUILayout.Space(background.margin.bottom);
+
+        if (Event.current.type == EventType.Repaint)
+            background.Draw(bgRect, false, false, expanded, false);
+
+        expanded = EditorGUI.Foldout(rect, expanded, label, true, foldout);
+
+        return expanded;
+    }
+
+    void PepperProperty(MaterialEditor editor, MaterialProperty prop, string label, GUIStyle style, int indent)
+    {
+        GUILayout.Space(style.margin.top);
+        Rect rect = EditorGUILayout.GetControlRect();
+
+        rect.xMin = 10 + indent;
+        rect.xMax = EditorGUIUtility.currentViewWidth - 10;
+
+        rect.xMin += style.margin.left;
+        rect.xMax -= style.margin.right;
+
+        GUILayout.Space(style.margin.bottom);
+
+        editor.ShaderProperty(rect, prop, label);
+    }
+
+    void PepperPropertySingleLine(MaterialEditor editor, MaterialProperty prop, string label, GUIStyle style, int indent)
+    {
+        GUILayout.Space(style.margin.top);
+        Rect rect = EditorGUILayout.GetControlRect();
+
+        rect.xMin = 10 + indent;
+        rect.xMax = EditorGUIUtility.currentViewWidth - 10;
+
+        GUILayout.Space(style.margin.bottom);
+
+        editor.TexturePropertyMiniThumbnail(rect, prop, label, "Select a texture...");
+    }
+
+    private static GUIStyle SectionFoldoutStyle(int indent = 0)
     {
         var style = new GUIStyle(GUI.skin.FindStyle("Foldout"))
         {
-            margin = new RectOffset(0, 0, 0, 0),
+            margin = new RectOffset(indent - 5, 0, 0, 0),
             padding = new RectOffset(15, 0, 0, 0)
         };
-        style.normal = GUI.skin.FindStyle("LargeLabel").normal;
-        style.fontSize = 13;
-
         return style;
     }
 
     private static GUIStyle HelpBoxStyle(int indent = 0)
     {
-        var style = new GUIStyle()
+        var style = new GUIStyle(GUI.skin.FindStyle("AnimItemBackground"))
         {
-            margin = new RectOffset(indent, 0, 0, 0),
-            padding = new RectOffset(0, 3, 0, 3)
+            margin = new RectOffset(0, 0, 5, 5),
+            padding = new RectOffset(0, 0, 2, 2)
         };
-        
-        return style;
-    }
-
-    private static GUIStyle Wrapper()
-    {
-        var style = new GUIStyle()
-        {
-            margin = new RectOffset(0, 0, 0, 0),
-            padding = new RectOffset(0, 0, 0, 0)
-        };
-        
         return style;
     }
 
@@ -68,7 +107,7 @@ public class peppermint_ui : ShaderGUI
     {
         var style = new GUIStyle()
         {
-            margin = new RectOffset(indent, 0, 0, 0),
+            margin = new RectOffset(0, 0, 0, 0),
             padding = new RectOffset(0, 0, 0, 0)
         };
         
@@ -107,6 +146,15 @@ public class peppermint_ui : ShaderGUI
         return root;
     }
 
+    public static Rect FullWidthRect(float height = 0f)
+    {
+        if (height <= 0f) height = EditorGUIUtility.singleLineHeight;
+        Rect r = EditorGUILayout.GetControlRect(false, height, GUILayout.ExpandWidth(true));
+        r.xMin = 0;
+        r.xMax = EditorGUIUtility.currentViewWidth;
+        return r;
+    }
+
     private void MarkAttributes(MaterialEditor editor, MaterialProperty[] props)
     {
         Material mat = (Material)editor.target;
@@ -135,36 +183,50 @@ public class peppermint_ui : ShaderGUI
             if (!states.TryGetValue(folder.path, out bool expanded))
                 expanded = true;
 
-            using (new GUILayout.VerticalScope(Wrapper()))
-                using (new GUILayout.HorizontalScope(HelpBoxStyle(indent)))
-                    expanded = EditorGUILayout.Foldout(expanded, folder.name, true, FoldoutStyle());
+                expanded = PepperFoldout(
+                    ref expanded,
+                    folder.name,
+                    HelpBoxStyle(),
+                    SectionFoldoutStyle(indent),
+                    indent
+                );
+
 
             states[folder.path] = expanded;
 
             if (!expanded)
                 return;
+
+            indent += 25;
         }
 
-        int outdent = indent + 15;
+        int outdent = indent;
 
         foreach (var child in folder.children.Values)
-            if (child.depth == 1) 
-                DrawFolder(editor, material, child, indent);
-            else
-                DrawFolder(editor, material, child, outdent);
+            DrawFolder(editor, material, child, outdent);
 
         foreach (var prop in folder.properties)
         {
             var parsedName = prop.displayName.Split('/')[^1];
-            using (new GUILayout.VerticalScope(Wrapper()))
-                using (new GUILayout.HorizontalScope(PropertyStyle(indent)))
-                    if (propAttributes.ContainsKey(prop.name))
-                    {
-                        if (propAttributes[prop.name].SingleLineTexture == true)
-                            editor.TexturePropertySingleLine(new GUIContent(parsedName), prop);
-                    }
-                    else
-                        editor.ShaderProperty(prop, parsedName);
+            if (propAttributes.ContainsKey(prop.name))
+            {
+                if (propAttributes[prop.name].SingleLineTexture == true)
+                    PepperPropertySingleLine(
+                        editor, 
+                        prop, 
+                        parsedName, 
+                        PropertyStyle(indent), 
+                        indent
+                    );
+            }
+            else
+                PepperProperty(
+                    editor, 
+                    prop, 
+                    parsedName, 
+                    PropertyStyle(indent), 
+                    indent
+                );
         }
     }
 
