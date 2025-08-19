@@ -1,7 +1,6 @@
 v2f vert (appdata v)
 {
     v2f o = (v2f)0;
-    UNITY_SETUP_INSTANCE_ID(o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
     o.vertex = UnityObjectToClipPos(v.vertex);
     o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
