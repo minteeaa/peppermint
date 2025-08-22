@@ -1,5 +1,16 @@
-// base model and most of these functions from Google's Filament
-// https://google.github.io/filament/Filament.md.html#materialsystem/diffusebrdf
+/* 
+    base model and most of these functions are either directly from 
+    or heavily derived from Google's Filament
+    https://google.github.io/filament/Filament.md.html#materialsystem/diffusebrdf
+
+    good references for many of these functions:
+    https://github.com/google/filament/blob/main/shaders/src/surface_light_indirect.fs
+    https://github.com/google/filament/blob/main/shaders/src/surface_shading_model_cloth.fs
+    https://github.com/google/filament/blob/main/shaders/src/surface_shading_model_standard.fs
+*/
+
+// TODO: make this file readable for god's sake
+// TODO: actual subsurface shading model maybe
 
 float3 F_Schlick(float u, float3 f0)
 {
@@ -13,12 +24,25 @@ float D_GGX(float NoH, float a)
     return a2 / (PI * f * f);
 }
 
+float D_Charlie(float NoH, float roughness) {
+    // Estevez and Kulla 2017, "Production Friendly Microfacet Sheen BRDF"
+    float invAlpha  = 1.0 / roughness;
+    float cos2h = NoH * NoH;
+    float sin2h = max(1.0 - cos2h, 0.0078125);
+    return (2.0 + invAlpha) * pow(sin2h, invAlpha * 0.5) / (2.0 * PI);
+}
+
 float V_SmithGGXCorrelated(float NoV, float NoL, float a) 
 {
     float a2 = a * a;
     float GGXL = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
     float GGXV = NoL * sqrt((-NoV * a2 + NoV) * NoV + a2);
     return 0.5 / (GGXV + GGXL);
+}
+
+float V_Neubelt(float NoV, float NoL) {
+    // Neubelt and Pettineo 2013, "Crafting a Next-gen Material Pipeline for The Order: 1886"
+    return PREVENT_DIV0(1.0, 4.0 * (NoL + NoV - NoL * NoV), 0.00001532);
 }
 
 float Fd_Lambert() 
@@ -43,7 +67,11 @@ float Fd_Oren_Nayar(in float NoL, in float LoV, in float NoV, in float Rough, in
 float4 PrepareDFG(in LightingData ld)
 {
     float2 dfgUV = float2(ld.NoV, _Roughness);
-    float4 dfgSample = TEX2D_SAMPLE_SAMPLER(_dfg, dfg_bilinear_clamp_sampler, dfgUV);
+    #ifdef _PM_NDF_CHARLIE
+        float4 dfgSample = TEX2D_SAMPLE_SAMPLER(_dfg_cloth, dfg_bilinear_clamp_sampler, dfgUV);
+    #else
+        float4 dfgSample = TEX2D_SAMPLE_SAMPLER(_dfg, dfg_bilinear_clamp_sampler, dfgUV);
+    #endif
     return dfgSample;
 }
 
@@ -61,102 +89,185 @@ float ComputeSpecularAO(in float NoV, in float ao, in float roughness)
 
 float3 PrepareDirectSpecularTerm(in LightingData ld)
 {
-    float D = D_GGX(ld.NoH, _Roughness);
-    float3 F = F_Schlick(ld.LoH, ld.f0);
-    float V = V_SmithGGXCorrelated(ld.NoV, ld.NoL, _Roughness);
-    float3 spec = (D * V) * F;
-    spec *= ld.energyCompensation;
-    spec *= ld.horizon * ld.horizon;
+    float D = 0;
+    float V = 0;
+    float3 spec = 0;
+    float F = 0;
 
+    #ifdef _PM_NDF_GGX
+        D = D_GGX(ld.NoH, _Roughness);
+        V = V_SmithGGXCorrelated(ld.NoV, ld.NoL, _Roughness);
+        F = F_Schlick(ld.LoH, ld.f0);
+        spec = (D * V) * F;
+        spec *= ld.energyCompensation;
+        spec *= ld.horizon * ld.horizon;
+    #endif
+    #ifdef _PM_NDF_CHARLIE
+        D = D_Charlie(ld.NoH, _Roughness);
+        V = V_Neubelt(ld.NoV, ld.NoL);
+        F = ld.f0;
+        spec = (D * V) * F;
+    #endif 
+
+    // blame vrchat and bloom usage
     if (_ClampSpecular) 
     {
         spec = spec / (1.0 + spec);
     }
 
-    spec *= ld.illuminance;
     return spec;
 }
 
 float3 PrepareDirectDiffuseTerm(in LightingData ld)
 {
-    float3 Fd = Fd_Oren_Nayar(ld.NoL, ld.LoV, ld.NoV, _Roughness, _Diffuse);
-    Fd *= _Diffuse;
-    Fd *= ld.illuminance;
+    // prepare initial diffuse term
+    float3 diffuse = Fd_Oren_Nayar(ld.NoL, ld.LoV, ld.NoV, _Roughness, _Diffuse);
+
+    // simulate subsurface scattering
+    #ifdef _PM_FT_SUBSURFACE
+        diffuse *= saturate((dot(_NormalWS, ld.mainLightColor) + 0.5) / 2.25);
+    #endif
+
+    // return the direct diffuse term, add the specular term and process subsurface later
+    float3 Fd = diffuse * _Diffuse;
     return Fd;
 }
 
-float3 PrepareVertexSpecularTerm(in VertexLightingData vld, in LightingData ld)
+float3 PrepareVertexSpecularTerm(in VertexLightingData vld, in LightingData ld, in int index)
 {
-    float3 vertexSpecTerm = 0;
-    for (int index = 0; index < 4; index++)
+    float D = 0;
+    float V = 0;
+    float3 vR = 0;
+    float F = 0;
+
+    #ifdef _PM_NDF_GGX
+        D = D_GGX(vld.NoH[index], _Roughness);
+        V = V_SmithGGXCorrelated(ld.NoV, vld.attNoL[index], _Roughness);
+        F = F_Schlick(vld.LoH[index], ld.f0);
+        vR = (D * V) * F;
+        vR *= ld.energyCompensation;
+        vR *= ld.horizon * ld.horizon;
+    #endif
+    #ifdef _PM_NDF_CHARLIE
+        D = D_Charlie(vld.NoH[index], _Roughness);
+        V = V_Neubelt(ld.NoV, vld.NoL[index]);
+        F = ld.f0;
+        vR = (D * V) * F;
+    #endif
+
+    if (_ClampSpecular) 
     {
-        float D = D_GGX(vld.NoH[index], _Roughness);
-        float3 F = F_Schlick(vld.LoH[index], ld.f0);
-        float V = V_SmithGGXCorrelated(ld.NoV, vld.attNoL[index], _Roughness);
-        float3 interVST = (D * V) * F;
-        interVST *= ld.energyCompensation;
-        interVST *= ld.horizon * ld.horizon;
-
-        if (_ClampSpecular) 
-        {
-            interVST = interVST / (1.0 + interVST);
-        }
-
-        interVST *= vld.color[index];
-        interVST *= vld.attenuation[index];
-        vertexSpecTerm += interVST;
+        vR = vR / (1.0 + vR);
     }
-    return vertexSpecTerm;
+
+    return vR;
 }
 
-float3 PrepareVertexDiffuseTerm(in VertexLightingData vld, in LightingData ld)
+float3 PrepareVertexDiffuseTerm(in VertexLightingData vld, in LightingData ld, in int index)
 {
-    float3 vertexDiffuseTerm = 0;
-    for (int index = 0; index < 4; index++)
-    {
-        float LoV = clamp(dot(vld.lightDir[index], ld.viewDir), 0.0, 1.0);
-        float3 interVDT = Fd_Oren_Nayar(vld.NoL[index], LoV, ld.NoV, _Roughness, _Diffuse);
-        interVDT *= _Diffuse;
-        interVDT *= vld.color[index];
-        interVDT *= vld.attenuation[index];
-        vertexDiffuseTerm += interVDT;
-    }
-    return vertexDiffuseTerm;
+    float LoV = clamp(dot(vld.lightDir[index], ld.viewDir), 0.0, 1.0);
+    float3 vDiffuse = Fd_Oren_Nayar(vld.NoL[index], LoV, ld.NoV, _Roughness, _Diffuse);
+
+    #ifdef _PM_FT_SUBSURFACE
+        vDiffuse *= saturate((dot(_NormalWS, vld.color[index]) + 0.5) / 2.25);
+    #endif
+
+    float3 vD = vDiffuse * _Diffuse;
+    return vD;
+}
+
+void EvalSubsurfaceIBL(inout float3 Fd, in LightingData ld) 
+{
+    #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
+        Fd *= saturate(_Subsurface + ld.NoV);
+    #endif
 }
 
 float3 PrepareIndirectSpecularTerm(in LightingData ld)
 {
+    // evaluate initial IBL
     float4 dfgSample = PrepareDFG(ld);
-    float3 dfg = lerp(dfgSample.x, dfgSample.y, ld.f0);
+    float3 E;
+    #ifdef _PM_NDF_CHARLIE
+        E = ld.f0 * dfgSample.z;
+    #else
+        E = lerp(dfgSample.x, dfgSample.y, ld.f0);
+    #endif
 
-    ld.indirectSpecular *= ComputeSpecularAO(ld.NoV, _Occlusion, _Roughness);
-    ld.indirectSpecular *= ld.horizon * ld.horizon;
-    return ld.indirectSpecular * dfg;
+    float3 Fr = E * ld.indirectSpecular;
+
+    // specular calculated AO (using AO from tex)
+    Fr *= ComputeSpecularAO(ld.NoV, _Occlusion, _Roughness);
+    //horizon AO
+    Fr *= ld.horizon * ld.horizon;
+    
+    return Fr;
 }
 
 float3 PrepareIndirectDiffuseTerm(in LightingData ld)
 {
-    ld.indirectDiffuse *= Fd_Lambert();
-    ld.indirectDiffuse *= _Occlusion;
-    return ld.indirectDiffuse * _Diffuse;
+    // evaluate initial IBL
+    float4 dfgSample = PrepareDFG(ld);
+    float3 E;
+    #ifdef _PM_NDF_CHARLIE
+        E = ld.f0 * dfgSample.z;
+    #else
+        E = lerp(dfgSample.x, dfgSample.y, ld.f0);
+    #endif
+
+    float3 Fd = _Diffuse * ld.indirectDiffuse * (1.0 - E) * (Fd_Lambert() * _Occlusion);
+
+    // apply subsurface (not a full subsurface shading model)
+    EvalSubsurfaceIBL(Fd, ld);
+
+    return Fd; 
 }
 
 void ApplyLighting(inout LightingData ld, in VertexLightingData vld, in v2f i)
 {
     PrepareEnergyCompensation(ld);
-    float3 specular = PrepareDirectSpecularTerm(ld) + PrepareIndirectSpecularTerm(ld);
-    float3 diffuse = PrepareDirectDiffuseTerm(ld) + PrepareIndirectDiffuseTerm(ld);
+    float3 Fd = PrepareDirectDiffuseTerm(ld);
+    float3 Fr = PrepareDirectSpecularTerm(ld);
+    float3 IFd = PrepareIndirectDiffuseTerm(ld);
+    float3 IFr = PrepareIndirectSpecularTerm(ld);
+    float3 direct = 0;
+    float3 indirect = IFd + IFr;
 
-    ld.surfaceColor = diffuse + specular;
+    #ifdef _PM_FT_SUBSURFACE
+        // TODO: don't do this
+        // this isn't technically correct, "simulated" subsurface doesn't ingest a thickness map
+        // but it's here for the extra perceptual accuracy, it works well
+        Fd *= saturate((_Subsurface + ld.NoL) * _Thickness);
+        direct = Fd + Fr * ld.NoL;
+        direct *= ld.illuminance;
+    #else
+        direct = Fd + Fr;
+        direct *= ld.illuminance * ld.NoL;
+    #endif
 
-    float3 vertSpecular = 0;
-    float3 vertDiffuse = 0;
+    ld.surfaceColor = direct + indirect;
+
     #if defined(PASS_BASE)
         if (i.useVertexLights) {
-            vertSpecular = PrepareVertexSpecularTerm(vld, ld);
-            vertDiffuse = PrepareVertexDiffuseTerm(vld, ld);
-
-            ld.surfaceColor += vertDiffuse + vertSpecular;
+            float3 vertLighting = 0;
+            for (int index = 0; index < 4; index++)
+            {
+                float3 vL = 0;
+                float3 vD = PrepareVertexDiffuseTerm(vld, ld, index);
+                float3 vR = PrepareVertexSpecularTerm(vld, ld, index);
+                #ifdef _PM_FT_SUBSURFACE
+                    vD *= saturate((_Subsurface + vld.NoL[index]) * _Thickness);
+                    vL = vD + vR * vld.NoL[index];
+                    vL *= vld.color[index];
+                    vL *= vld.attenuation[index];
+                #else
+                    vL = vD + vR;
+                    vL *= vld.color[index];
+                    vL *= vld.attenuation[index] * vld.NoL[index];
+                #endif
+                vertLighting += vL;
+            }
+            ld.surfaceColor += vertLighting;
         }
     #endif
 }

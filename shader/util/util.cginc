@@ -1,3 +1,6 @@
+// derived from filament/shaders/src/common_math.glsl
+#define PREVENT_DIV0(n, d, magic)   ((n) / max(d, magic))
+
 void InitializeDefaultSampler(out float4 defaultSampler) 
 {
     defaultSampler = TEX2D_SAMPLE_SAMPLER(_samplerDefault, sampler_samplerDefault, 0) * EPSILON;

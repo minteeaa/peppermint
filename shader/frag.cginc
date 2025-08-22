@@ -1,6 +1,5 @@
 float4 frag (v2f i, bool isFrontFace : SV_IsFrontFace) : SV_Target
 {
-    UNITY_SETUP_INSTANCE_ID(i);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
     InitializeDefaultSampler(samplerDefault);
     ParseInputs(i, isFrontFace);

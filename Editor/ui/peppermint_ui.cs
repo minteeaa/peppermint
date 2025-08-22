@@ -237,13 +237,64 @@ public class peppermint_ui : ShaderGUI
 
     private void UpdateKeywords(MaterialEditor editor, MaterialProperty[] properties, Material material)
     {
-        bool hasAlpha = material.GetTexture("_AlphaTex") != null;
-        ToggleKeyword(hasAlpha, "_HAS_ALPHA_TEX", material);
+        if (material.GetTexture("_AlphaTex") != null && material.GetFloat("_pm_nk_hasalpha") == 0)
+            material.SetFloat("_pm_nk_hasalpha", 1.0f);
+        else if (material.GetTexture("_AlphaTex") == null && material.GetFloat("_pm_nk_hasalpha") == 1) 
+            material.SetFloat("_pm_nk_hasalpha", 0.0f);
+ 
+        float D = material.GetFloat("_DiffuseNDF");
+        ToggleKeyword(D == 0, "_PM_NDF_GGX", material);
+        ToggleKeyword(D == 1, "_PM_NDF_CHARLIE", material);
+        float sss = material.GetFloat("_SubsurfaceEnable");
+        ToggleKeyword(sss == 1, "_PM_FT_SUBSURFACE", material);
+    }
+
+    private void TexCheck(bool condition, string guid, string property, MaterialProperty[] properties)
+    {
+        if (condition) 
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            Texture2D tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path); 
+            MaterialProperty prop = FindProperty(property, properties);
+            prop.textureValue = tex;
+        }
+    }
+
+    private void UpdateInternal(Material material, MaterialProperty[] properties) {
+            TexCheck(
+                material.GetTexture("_ditherPattern") == null, 
+                "481eb725641632748b7be205a1f60124",
+                "_ditherPattern",
+                properties
+            );
+
+            TexCheck(
+                material.GetTexture("_samplerDefault") == null, 
+                "1428608754793fb43b394b86fe5c8e20",
+                "_samplerDefault",
+                properties
+            );
+                
+            TexCheck(
+                material.GetTexture("_dfg_cloth") == null, 
+                "3a4f51f7f57ed78428e302e36b886334",
+                "_dfg_cloth",
+                properties
+            );
+
+            TexCheck(
+                material.GetTexture("_dfg") == null, 
+                "ce35b977c39365343afe7f912dd94827",
+                "_dfg",
+                properties
+            );
     }
 
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
     {
         Material material = materialEditor.target as Material;
+
+        UpdateInternal(material, properties);
 
         MarkAttributes(materialEditor, properties);
 

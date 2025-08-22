@@ -7,13 +7,16 @@
 Texture2D _samplerDefault;
 SamplerState sampler_samplerDefault;
 Texture2D _dfg;
+Texture2D _dfg_cloth;
 SamplerState dfg_bilinear_clamp_sampler;
 sampler2D _ditherPattern;
 float4 _ditherPattern_TexelSize;
 
 INIT_TEX2D_NOSAMPLER(_DiffuseAlpha);
 INIT_TEX2D_NOSAMPLER(_AlphaTex);
+float _pm_nk_hasalpha;
 INIT_TEX2D_NOSAMPLER(_ORMTexture);
+INIT_TEX2D_NOSAMPLER(_ThicknessTexture);
 INIT_TEX2D_NOSAMPLER(_NormalMap);
 
 INIT_TEX2D_NOSAMPLER(_EmissionMask);
@@ -30,6 +33,8 @@ float4 _AlphaTex_ST;
 float4 _AlphaTex_TexelSize;
 float4 _ORMTexture_ST;
 float4 _ORMTexure_TexelSize;
+float4 _ThicknessTexture_ST;
+float4 _ThicknessTexture_TexelSize;
 float4 _NormalMap_ST;
 float4 _NormalMap_TexelSize;
 
@@ -54,6 +59,11 @@ float _EnableAlphaDither;
 float _ClampSpecular;
 float _RoughnessStrength;
 float _MetallicStrength;
+float _Thickness;
+
+float4 _SheenColor;
+float4 _SubsurfaceColor;
+float3 _Subsurface;
 
 float3 _LightColor0;
 float4 samplerDefault;
@@ -106,6 +116,7 @@ struct appdata
     float2 uv1 : TEXCOORD1;
     float2 uv2 : TEXCOORD2;
     float2 uv3 : TEXCOORD3;
+    UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 struct v2f
@@ -122,9 +133,9 @@ struct v2f
     float3 worldPos : TEXCOORD5;
     float3 localPos : TEXCOORD6;
     bool useVertexLights : TEXCOORD7;
+    UNITY_VERTEX_OUTPUT_STEREO
 };
 
-#include "UnityCG.cginc"
 #include "./third_party/VRCLightVolumes/LightVolumes.cginc"
 #include "./third_party/LTCGI.cginc"
 #include "./util/util.cginc"

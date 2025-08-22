@@ -4,11 +4,14 @@ ShaderImporter:
   externalObjects: {}
   defaultTextures:
   - _dfg: {fileID: 2800000, guid: ce35b977c39365343afe7f912dd94827, type: 3}
+  - _dfg_cloth: {fileID: 2800000, guid: 3a4f51f7f57ed78428e302e36b886334, type: 3}
   - _samplerDefault: {fileID: 2800000, guid: 1428608754793fb43b394b86fe5c8e20, type: 3}
   - _ditherPattern: {fileID: 2800000, guid: 481eb725641632748b7be205a1f60124, type: 3}
   - _ORMTexture: {instanceID: 0}
   - _NormalMap: {instanceID: 0}
   - _DiffuseAlpha: {instanceID: 0}
+  - _AlphaTex: {instanceID: 0}
+  - _EmissionMask: {instanceID: 0}
   nonModifiableTextures: []
   userData: 
   assetBundleName: 

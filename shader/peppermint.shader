@@ -2,9 +2,11 @@ Shader "mintea/peppermint"
 {
 	Properties
 	{
-        [HideInInspector] _dfg("DFG", 2D) = "white" {}
+        [HideInInspector] _dfg("GXX DFG", 2D) = "white" {}
+        [HideInInspector] _dfg_cloth("Cloth DFG", 2D) = "white" {}
         [HideInInspector] _samplerDefault("", 2D) = "white" {}
         [HideInInspector] _ditherPattern("Dither", 2D) = "white" {}
+        [HideInInspector] _pm_nk_hasalpha("_hasalpha", Range(0, 1)) = 0
 
 		[SingleLineTexture] _ORMTexture("Main/Textures/ORM", 2D) = "white" {}
         [SingleLineTexture][Normal] _NormalMap("Main/Textures/Normal Map", 2D) = "bump" {}
@@ -12,9 +14,16 @@ Shader "mintea/peppermint"
         [SingleLineTexture] _DiffuseAlpha("Main/Textures/Diffuse", 2D) = "white" {}
         [SingleLineTexture] _AlphaTex("Main/Textures/Alpha", 2D) = "white" {}
 
+        [Enum(GGX, 0, Charlie, 1)] _DiffuseNDF("Main/BRDF/NDF/Diffuse NDF", Float) = 0
+        [hdr] _SheenColor ("Main/BRDF/NDF/Sheen Color", color) = (1,1,1,1)
+
+        [Toggle] _SubsurfaceEnable("Main/BRDF/Subsurface Scattering/Enable", Float) = 0
+        [SingleLineTexture] _ThicknessTexture("Main/BRDF/Subsurface Scattering/Thickness", 2D) = "white" {}
+        [hdr] _SubsurfaceColor ("Main/BRDF/Subsurface Scattering/Color", color) = (1,1,1,1)
+
 		_AOStrength("Main/AO Strength", Range(0, 1)) = 1
-        _RoughnessStrength("Main/Roughness Strength", Range(0, 1)) = 1
-        _MetallicStrength("Main/Metallic Strength", Range(0, 1)) = 1
+        _RoughnessStrength("Main/Roughness", Range(0, 1)) = 1
+        _MetallicStrength("Main/Metallic", Range(0, 1)) = 1
 		_NormalStrength("Main/Normal Strength", Range(0, 5)) = 1
         [Toggle] _ClampSpecular("Main/Clamp Specular", Float) = 0
 
@@ -60,7 +69,7 @@ Shader "mintea/peppermint"
 		[Enum(UnityEngine.Rendering.StencilOp)] _StencilZFailOp ("Rendering/Stencil/Stencil ZFail Op", Float) = 0
 		[Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompareFunction ("Rendering/Stencil/Stencil Compare Function", Float) = 8
 	}
-    CustomEditor "peppermint_ui"
+    CustomEditor "peppermint_ui" 
     SubShader
     {
         Tags { "RenderType" = "Opaque" "Queue" = "Geometry" "VRCFallback" = "Standard" "LTCGI"="ALWAYS" }
@@ -85,8 +94,10 @@ Shader "mintea/peppermint"
             #pragma multi_compile_fog
             #pragma multi_compile_fwdbase
 			#pragma multi_compile_instancing
-            #pragma shader_feature_local _HAS_ALPHA_TEX
+            #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
+            #pragma shader_feature_local _PM_FT_SUBSURFACE
             #define PASS_BASE
+            #include "UnityCG.cginc"
             #include "defines.cginc"
             ENDCG
         }
@@ -111,8 +122,10 @@ Shader "mintea/peppermint"
             #pragma fragment frag
             #pragma multi_compile_fog
 			#pragma multi_compile_fwdadd_fullshadows
-            #pragma shader_feature_local _HAS_ALPHA_TEX
+            #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
+            #pragma shader_feature_local _PM_FT_SUBSURFACE
             #define PASS_ADD
+            #include "UnityCG.cginc"
             #include "defines.cginc"
             ENDCG
         }
@@ -134,8 +147,8 @@ Shader "mintea/peppermint"
             #pragma fragment frag
 			#pragma multi_compile_instancing
             #pragma multi_compile_shadowcaster
-            #pragma shader_feature_local _HAS_ALPHA_TEX
             #define PASS_SHDW
+            #include "UnityCG.cginc"
             #include "defines.cginc"
             ENDCG
         }

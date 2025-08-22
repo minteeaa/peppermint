@@ -44,10 +44,15 @@ void ParseInputs(inout v2f i, in bool isFrontFace)
     _Normal = lerp(float4(0.5, 0.5, 1, 1), ReconstructNormal(nm, _NormalStrength), _NormalStrength);
 
     float alpha = 1.0;
-    #ifdef _HAS_ALPHA_TEX
+    if (_pm_nk_hasalpha)
         alpha = TEX2D_SAMPLE_SAMPLER(_AlphaTex, sampler_samplerDefault, i.uv0).r;
-    #else
+    else
         alpha = TEX2D_SAMPLE_SAMPLER(_DiffuseAlpha, sampler_samplerDefault, i.uv0).a;
+
+    #ifdef _PM_FT_SUBSURFACE
+        _Thickness = TEX2D_SAMPLE_SAMPLER(_ThicknessTexture, sampler_samplerDefault, i.uv0).r;
+    #else
+        _Thickness = 1.0;
     #endif
     
     float3 albedo = TEX2D_SAMPLE_SAMPLER(_DiffuseAlpha, sampler_samplerDefault, i.uv0).rgb;
@@ -61,4 +66,6 @@ void ParseInputs(inout v2f i, in bool isFrontFace)
 
     _Diffuse = _Albedo * (1.0 - _Metallic);
     _Alpha = AlphaBlend(i, alpha, _AlphaMode) * _DiffuseHDR.a;
+
+    _Subsurface = _SubsurfaceColor.rgb * _Diffuse;
 }
