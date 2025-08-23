@@ -21,6 +21,10 @@ Shader "mintea/peppermint"
         [SingleLineTexture] _ThicknessTexture("Main/BRDF/Subsurface Scattering/Thickness", 2D) = "white" {}
         [hdr] _SubsurfaceColor ("Main/BRDF/Subsurface Scattering/Color", color) = (1,1,1,1)
 
+        [Toggle] _AnisotropicsEnable("Main/BRDF/Anisotropics/Enable", Float) = 0
+        _AnisotropicsStrength("Main/BRDF/Anisotropics/Strength", Range(0, 1)) = 1
+
+
 		_AOStrength("Main/AO Strength", Range(0, 1)) = 1
         _RoughnessStrength("Main/Roughness", Range(0, 1)) = 1
         _MetallicStrength("Main/Metallic", Range(0, 1)) = 1
@@ -96,6 +100,7 @@ Shader "mintea/peppermint"
 			#pragma multi_compile_instancing
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
             #pragma shader_feature_local _PM_FT_SUBSURFACE
+            #pragma shader_feature_local _PM_FT_ANISOTROPICS
             #define PASS_BASE
             #include "UnityCG.cginc"
             #include "defines.cginc"
@@ -124,6 +129,7 @@ Shader "mintea/peppermint"
 			#pragma multi_compile_fwdadd_fullshadows
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
             #pragma shader_feature_local _PM_FT_SUBSURFACE
+            #pragma shader_feature_local _PM_FT_ANISOTROPICS
             #define PASS_ADD
             #include "UnityCG.cginc"
             #include "defines.cginc"

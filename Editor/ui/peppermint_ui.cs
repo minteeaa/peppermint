@@ -247,6 +247,8 @@ public class peppermint_ui : ShaderGUI
         ToggleKeyword(D == 1, "_PM_NDF_CHARLIE", material);
         float sss = material.GetFloat("_SubsurfaceEnable");
         ToggleKeyword(sss == 1, "_PM_FT_SUBSURFACE", material);
+        float aso = material.GetFloat("_AnisotropicsEnable");
+        ToggleKeyword(aso == 1, "_PM_FT_ANISOTROPICS", material);
     }
 
     private void TexCheck(bool condition, string guid, string property, MaterialProperty[] properties)

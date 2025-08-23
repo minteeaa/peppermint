@@ -24,6 +24,19 @@ float D_GGX(float NoH, float a)
     return a2 / (PI * f * f);
 }
 
+float D_GGX_Anisotropic(float at, float ab, float ToH, float BoH, float NoH) {
+    // Burley 2012, "Physically-Based Shading at Disney"
+
+    // The values at and ab are perceptualRoughness^2, a2 is therefore perceptualRoughness^4
+    // The dot product below computes perceptualRoughness^8. We cannot fit in fp16 without clamping
+    // the roughness to too high values so we perform the dot product and the division in fp32
+    float a2 = at * ab;
+    float3 d = float3(ab * ToH, at * BoH, a2 * NoH);
+    float d2 = dot(d, d);
+    float b2 = a2 / d2;
+    return a2 * b2 * b2 * (1.0 / PI);
+}
+
 float D_Charlie(float NoH, float roughness) {
     // Estevez and Kulla 2017, "Production Friendly Microfacet Sheen BRDF"
     float invAlpha  = 1.0 / roughness;
@@ -38,6 +51,17 @@ float V_SmithGGXCorrelated(float NoV, float NoL, float a)
     float GGXL = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
     float GGXV = NoL * sqrt((-NoV * a2 + NoV) * NoV + a2);
     return 0.5 / (GGXV + GGXL);
+}
+
+float V_SmithGGXCorrelated_Anisotropic(float at, float ab, float ToV, float BoV,
+        float ToL, float BoL, float NoV, float NoL) {
+    // Heitz 2014, "Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs"
+    // TODO: lambdaV can be pre-computed for all the lights, it should be moved out of this function
+    float lambdaV = NoL * length(float3(at * ToV, ab * BoV, NoV));
+    float lambdaL = NoV * length(float3(at * ToL, ab * BoL, NoL));
+    // 0.0000077 = nextafter(0.5 / MEDIUMP_FLT_MAX, 1.0) in fp16, so we don't overflow
+    float v = PREVENT_DIV0(0.5, lambdaV + lambdaL, 0.0000077);
+    return v;
 }
 
 float V_Neubelt(float NoV, float NoL) {
@@ -87,7 +111,7 @@ float ComputeSpecularAO(in float NoV, in float ao, in float roughness)
     return clamp(pow(NoV + ao, exp2(-16.0 * roughness - 1.0)) - 1.0 + ao, 0.0, 1.0);
 }
 
-float3 PrepareDirectSpecularTerm(in LightingData ld)
+float3 PrepareDirectSpecularTerm(in LightingData ld, in AnisotropyData ad)
 {
     float D = 0;
     float V = 0;
@@ -95,9 +119,26 @@ float3 PrepareDirectSpecularTerm(in LightingData ld)
     float F = 0;
 
     #ifdef _PM_NDF_GGX
-        D = D_GGX(ld.NoH, _Roughness);
-        V = V_SmithGGXCorrelated(ld.NoV, ld.NoL, _Roughness);
-        F = F_Schlick(ld.LoH, ld.f0);
+        #ifdef _PM_FT_ANISOTROPICS
+            // Kulla 2017, "Revisiting Physically Based Shading at Imageworks"
+            float at = max(_Roughness * (1.0 + _AnisotropicsStrength), 0.04);
+            float ab = max(_Roughness * (1.0 - _AnisotropicsStrength), 0.04);
+
+            float ToH = dot(ad.t, ld.h);
+            float BoH = dot(ad.b, ld.h);
+            float ToV = dot(ad.t, ld.viewDir);
+            float BoV = dot(ad.b, ld.viewDir);
+            float ToL = dot(ad.t, ld.lightDir);
+            float BoL = dot(ad.b, ld.lightDir);
+
+            D = D_GGX_Anisotropic(at, ab, ToH, BoH, ld.NoH);
+            V = V_SmithGGXCorrelated_Anisotropic(at, ab, ToV, BoV, ToL, BoL, ld.NoV, ld.NoL);
+            F = F_Schlick(ld.LoH, ld.f0);
+        #else
+            D = D_GGX(ld.NoH, _Roughness);
+            V = V_SmithGGXCorrelated(ld.NoV, ld.NoL, _Roughness);
+            F = F_Schlick(ld.LoH, ld.f0);
+        #endif
         spec = (D * V) * F;
         spec *= ld.energyCompensation;
         spec *= ld.horizon * ld.horizon;
@@ -133,7 +174,7 @@ float3 PrepareDirectDiffuseTerm(in LightingData ld)
     return Fd;
 }
 
-float3 PrepareVertexSpecularTerm(in VertexLightingData vld, in LightingData ld, in int index)
+float3 PrepareVertexSpecularTerm(in VertexLightingData vld, in LightingData ld, in AnisotropyData ad, in int index)
 {
     float D = 0;
     float V = 0;
@@ -141,9 +182,26 @@ float3 PrepareVertexSpecularTerm(in VertexLightingData vld, in LightingData ld, 
     float F = 0;
 
     #ifdef _PM_NDF_GGX
-        D = D_GGX(vld.NoH[index], _Roughness);
-        V = V_SmithGGXCorrelated(ld.NoV, vld.attNoL[index], _Roughness);
-        F = F_Schlick(vld.LoH[index], ld.f0);
+        #ifdef _PM_FT_ANISOTROPICS
+            // Kulla 2017, "Revisiting Physically Based Shading at Imageworks"
+            float at = max(_Roughness * (1.0 + _AnisotropicsStrength), 0.04);
+            float ab = max(_Roughness * (1.0 - _AnisotropicsStrength), 0.04);
+
+            float ToH = dot(ad.t, vld.h[index]);
+            float BoH = dot(ad.b, vld.h[index]);
+            float ToV = dot(ad.t, ld.viewDir);
+            float BoV = dot(ad.b, ld.viewDir);
+            float ToL = dot(ad.t, vld.lightDir[index]);
+            float BoL = dot(ad.b, vld.lightDir[index]);
+
+            D = D_GGX_Anisotropic(at, ab, ToH, BoH, vld.NoH[index]);
+            V = V_SmithGGXCorrelated_Anisotropic(at, ab, ToV, BoV, ToL, BoL, ld.NoV, vld.NoL[index]);
+            F = F_Schlick(vld.LoH[index], ld.f0);
+        #else
+            D = D_GGX(vld.NoH[index], _Roughness);
+            V = V_SmithGGXCorrelated(ld.NoV, vld.attNoL[index], _Roughness);
+            F = F_Schlick(vld.LoH[index], ld.f0);
+        #endif
         vR = (D * V) * F;
         vR *= ld.energyCompensation;
         vR *= ld.horizon * ld.horizon;
@@ -223,11 +281,11 @@ float3 PrepareIndirectDiffuseTerm(in LightingData ld)
     return Fd; 
 }
 
-void ApplyLighting(inout LightingData ld, in VertexLightingData vld, in v2f i)
+void ApplyLighting(inout LightingData ld, in VertexLightingData vld, in AnisotropyData ad, in v2f i)
 {
     PrepareEnergyCompensation(ld);
     float3 Fd = PrepareDirectDiffuseTerm(ld);
-    float3 Fr = PrepareDirectSpecularTerm(ld);
+    float3 Fr = PrepareDirectSpecularTerm(ld, ad);
     float3 IFd = PrepareIndirectDiffuseTerm(ld);
     float3 IFr = PrepareIndirectSpecularTerm(ld);
     float3 direct = 0;
@@ -254,7 +312,7 @@ void ApplyLighting(inout LightingData ld, in VertexLightingData vld, in v2f i)
             {
                 float3 vL = 0;
                 float3 vD = PrepareVertexDiffuseTerm(vld, ld, index);
-                float3 vR = PrepareVertexSpecularTerm(vld, ld, index);
+                float3 vR = PrepareVertexSpecularTerm(vld, ld, ad, index);
                 #ifdef _PM_FT_SUBSURFACE
                     vD *= saturate((_Subsurface + vld.NoL[index]) * _Thickness);
                     vL = vD + vR * vld.NoL[index];

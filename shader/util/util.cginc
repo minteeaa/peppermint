@@ -6,14 +6,40 @@ void InitializeDefaultSampler(out float4 defaultSampler)
     defaultSampler = TEX2D_SAMPLE_SAMPLER(_samplerDefault, sampler_samplerDefault, 0) * EPSILON;
 }
 
-float3 ToWorldSpace(inout v2f i, in float3 nmap, in bool isFrontFace)
+void FlipNormals(inout v2f i, in bool isFrontFace)
 {
     i.normal = normalize(i.normal);
     if (!isFrontFace && _FlipBackfaceNormals == 1) 
     {
         i.normal = -i.normal;
     }
-    return ((nmap.x * i.tangent.xyz) + (nmap.z * i.normal.xyz)) + (cross(i.normal.xyz, i.tangent.xyz) * nmap.y);
+}
+
+float3 ToWorldSpace(inout v2f i, in float3 input)
+{
+    float3 n = UnityObjectToWorldNormal(i.normal);
+    float3 t = UnityObjectToWorldDir(i.tangent.xyz);
+    float3 b = cross(n, t) * i.tangent.w;
+
+    float3x3 tbn = float3x3(t, b, n);
+    float3 worldNormal = normalize(mul(input, tbn));
+    return worldNormal;
+}
+
+void InitAnisotropyData(inout AnisotropyData ad, in LightingData ld, in v2f i) {
+    #ifdef _PM_FT_ANISOTROPICS
+        float3 direction = float3(1, 0, 0);
+        float3 geoNormal = ToWorldSpace(i, i.normal);
+        ad.strength = _AnisotropicsStrength;
+        ad.t = normalize(ToWorldSpace(i, direction));
+        ad.b = normalize(cross(geoNormal, ad.t));
+        float3 anisotropyDirection = lerp(ad.t, ad.b, ad.strength);
+        float3 anisotropicTangent = cross(anisotropyDirection, ld.viewDir);
+        float3 anisotropicNormal = cross(anisotropicTangent, anisotropyDirection);
+        float bendFactor = abs(ad.strength) * saturate(5.0 * _RoughnessPerceptual);
+        float3 bentNormal = lerp(_NormalWS, anisotropicNormal, bendFactor);
+        ad.r = reflect(ld.viewDir, bentNormal);
+    #endif
 }
 
 void ApplyEmission(inout LightingData ld) 
@@ -68,11 +94,17 @@ void ApplyIndirectDiffuse(inout v2f i, inout LightingData ld)
     ld.indirectDiffuse += eval;
 }
 
-void ApplyIndirectSpecular(inout v2f i, inout LightingData ld)
+void ApplyIndirectSpecular(inout v2f i, inout LightingData ld, in AnisotropyData ad)
 {
     half mip = _RoughnessPerceptual * 6;
     float3 spA = float3(0, 0, 0);
-    half4 encoded = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, ld.r, mip);
+    half4 encoded = 0;
+    #ifdef _PM_FT_ANISOTROPICS
+        float3 r = lerp(ld.r, ad.r, _AnisotropicsStrength);
+        encoded = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, r, mip);
+    #else
+        encoded = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, ld.r, mip);
+    #endif
 
     float3 L0 = float3(0, 0, 0);
     float3 L1r = float3(0, 0, 0);
@@ -169,7 +201,7 @@ void ApplyLTCGI(inout v2f i, inout LightingData ld)
     ld.indirectSpecular += ld.ltcgiSpecular;
 }
 
-void InitLightingData(inout v2f i, inout LightingData ld, inout VertexLightingData vld)
+void InitLightingData(inout v2f i, inout LightingData ld, inout VertexLightingData vld, inout AnisotropyData ad)
 {
     float3 lightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
     float3 viewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
@@ -207,7 +239,11 @@ void InitLightingData(inout v2f i, inout LightingData ld, inout VertexLightingDa
     ld.illuminance = illuminance;
     ld.horizon = horizon;
 
-    ApplyIndirectSpecular(i, ld);
+    #ifdef _PM_FT_ANISOTROPICS
+        InitAnisotropyData(ad, ld, i);
+    #endif
+
+    ApplyIndirectSpecular(i, ld, ad);
     ApplyIndirectDiffuse(i, ld);
     InitVertexLightsData(i, ld, vld);
 }

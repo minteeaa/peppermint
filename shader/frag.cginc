@@ -2,13 +2,19 @@ float4 frag (v2f i, bool isFrontFace : SV_IsFrontFace) : SV_Target
 {
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
     InitializeDefaultSampler(samplerDefault);
+    if (_FlipBackfaceNormals > 0.1)
+    {
+        FlipNormals(i, isFrontFace);
+    }
+        
     ParseInputs(i, isFrontFace);
     InitMiscData(i);
     LightingData ld = (LightingData)0;
     VertexLightingData vld = (VertexLightingData)0;
-    InitLightingData(i, ld, vld);
+    AnisotropyData ad = (AnisotropyData)0;
+    InitLightingData(i, ld, vld, ad);
     ApplyLTCGI(i, ld);
-    ApplyLighting(ld, vld, i);
+    ApplyLighting(ld, vld, ad, i);
     ApplyEmission(ld);
 
     float4 col = float4(ld.surfaceColor.x, ld.surfaceColor.y, ld.surfaceColor.z, _Alpha);

@@ -62,7 +62,7 @@ void ParseInputs(inout v2f i, in bool isFrontFace)
     _Emission = emission;
 
     _Roughness = max(_RoughnessPerceptual * _RoughnessPerceptual, 0.001);
-    _NormalWS = ToWorldSpace(i, _Normal, isFrontFace);
+    _NormalWS = ToWorldSpace(i, _Normal);
 
     _Diffuse = _Albedo * (1.0 - _Metallic);
     _Alpha = AlphaBlend(i, alpha, _AlphaMode) * _DiffuseHDR.a;

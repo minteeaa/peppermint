@@ -65,8 +65,19 @@ float4 _SheenColor;
 float4 _SubsurfaceColor;
 float3 _Subsurface;
 
+float _AnisotropicEnable;
+float _AnisotropicsStrength;
+
 float3 _LightColor0;
 float4 samplerDefault;
+
+struct AnisotropyData
+{
+    float strength;
+    float t;
+    float b;
+    float3 r;
+};
 
 struct LightingData
 {
