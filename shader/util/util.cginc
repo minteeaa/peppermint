@@ -15,29 +15,30 @@ void FlipNormals(inout v2f i, in bool isFrontFace)
     }
 }
 
-float3 ToWorldSpace(inout v2f i, in float3 input)
+float3 TangentToWorld(inout v2f i, in float3 input)
 {
-    float3 n = UnityObjectToWorldNormal(i.normal);
-    float3 t = UnityObjectToWorldDir(i.tangent.xyz);
-    float3 b = cross(n, t) * i.tangent.w;
-
-    float3x3 tbn = float3x3(t, b, n);
-    float3 worldNormal = normalize(mul(input, tbn));
+    // this function assumes vertex normals and tangents are provided *in worldspace already*
+    // which they should be, from the vertex shader; this is at its core a mini, inline TBN
+    float3 worldNormal = 
+        normalize(
+                ((input.x * i.tangent.xyz) + 
+                (input.z * i.normal.xyz)) + 
+                (i.tangent.w * cross(i.normal.xyz, i.tangent.xyz) * input.y)
+                );
     return worldNormal;
 }
 
 void InitAnisotropyData(inout AnisotropyData ad, in LightingData ld, in v2f i) {
     #ifdef _PM_FT_ANISOTROPICS
         float3 direction = float3(1, 0, 0);
-        float3 geoNormal = ToWorldSpace(i, i.normal);
         ad.strength = _AnisotropicsStrength;
-        ad.t = normalize(ToWorldSpace(i, direction));
-        ad.b = normalize(cross(geoNormal, ad.t));
+        ad.t = TangentToWorld(i, direction);
+        ad.b = normalize(cross(i.normal, ad.t));
         float3 anisotropyDirection = lerp(ad.t, ad.b, ad.strength);
         float3 anisotropicTangent = cross(anisotropyDirection, ld.viewDir);
         float3 anisotropicNormal = cross(anisotropicTangent, anisotropyDirection);
         float bendFactor = abs(ad.strength) * saturate(5.0 * _RoughnessPerceptual);
-        float3 bentNormal = lerp(_NormalWS, anisotropicNormal, bendFactor);
+        float3 bentNormal = normalize(lerp(_NormalWS, anisotropicNormal, bendFactor));
         ad.r = reflect(ld.viewDir, bentNormal);
     #endif
 }

@@ -2,6 +2,7 @@ float4 frag (v2f i, bool isFrontFace : SV_IsFrontFace) : SV_Target
 {
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
     InitializeDefaultSampler(samplerDefault);
+    
     if (_FlipBackfaceNormals > 0.1)
     {
         FlipNormals(i, isFrontFace);

@@ -74,8 +74,8 @@ float4 samplerDefault;
 struct AnisotropyData
 {
     float strength;
-    float t;
-    float b;
+    float3 t;
+    float3 b;
     float3 r;
 };
 

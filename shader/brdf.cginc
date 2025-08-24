@@ -27,9 +27,6 @@ float D_GGX(float NoH, float a)
 float D_GGX_Anisotropic(float at, float ab, float ToH, float BoH, float NoH) {
     // Burley 2012, "Physically-Based Shading at Disney"
 
-    // The values at and ab are perceptualRoughness^2, a2 is therefore perceptualRoughness^4
-    // The dot product below computes perceptualRoughness^8. We cannot fit in fp16 without clamping
-    // the roughness to too high values so we perform the dot product and the division in fp32
     float a2 = at * ab;
     float3 d = float3(ab * ToH, at * BoH, a2 * NoH);
     float d2 = dot(d, d);
@@ -284,32 +281,40 @@ float3 PrepareIndirectDiffuseTerm(in LightingData ld)
 void ApplyLighting(inout LightingData ld, in VertexLightingData vld, in AnisotropyData ad, in v2f i)
 {
     PrepareEnergyCompensation(ld);
-    float3 Fd = PrepareDirectDiffuseTerm(ld);
-    float3 Fr = PrepareDirectSpecularTerm(ld, ad);
+    float3 Fd = 0;
+    float3 Fr = 0;
     float3 IFd = PrepareIndirectDiffuseTerm(ld);
     float3 IFr = PrepareIndirectSpecularTerm(ld);
     float3 direct = 0;
     float3 indirect = IFd + IFr;
 
-    #ifdef _PM_FT_SUBSURFACE
-        // TODO: don't do this
-        // this isn't technically correct, "simulated" subsurface doesn't ingest a thickness map
-        // but it's here for the extra perceptual accuracy, it works well
-        Fd *= saturate((_Subsurface + ld.NoL) * _Thickness);
-        direct = Fd + Fr * ld.NoL;
-        direct *= ld.illuminance;
-    #else
-        direct = Fd + Fr;
-        direct *= ld.illuminance * ld.NoL;
-    #endif
+    // calculate direct lighting, only if there is direct lighting to calculate
+    if (ld.NoL > 0) 
+    {
+        Fd = PrepareDirectDiffuseTerm(ld);
+        Fr = PrepareDirectSpecularTerm(ld, ad);
 
-    ld.surfaceColor = direct + indirect;
+        #ifdef _PM_FT_SUBSURFACE
+            // TODO: don't do this
+            // this isn't technically correct, "simulated" subsurface doesn't ingest a thickness map
+            // but it's here for the extra perceptual accuracy, it works well
+            Fd *= saturate((_Subsurface + ld.NoL) * _Thickness);
+            direct = Fd + Fr * ld.NoL;
+            direct *= ld.illuminance;
+        #else
+            direct = Fd + Fr;
+            direct *= ld.illuminance * ld.NoL;
+        #endif
+
+        ld.surfaceColor += direct;
+    }
 
     #if defined(PASS_BASE)
         if (i.useVertexLights) {
             float3 vertLighting = 0;
             for (int index = 0; index < 4; index++)
             {
+                if (vld.NoL[index] > 0) {
                 float3 vL = 0;
                 float3 vD = PrepareVertexDiffuseTerm(vld, ld, index);
                 float3 vR = PrepareVertexSpecularTerm(vld, ld, ad, index);
@@ -324,8 +329,11 @@ void ApplyLighting(inout LightingData ld, in VertexLightingData vld, in Anisotro
                     vL *= vld.attenuation[index] * vld.NoL[index];
                 #endif
                 vertLighting += vL;
+                }
             }
             ld.surfaceColor += vertLighting;
         }
     #endif
+
+    ld.surfaceColor += indirect;
 }

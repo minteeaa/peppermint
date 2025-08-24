@@ -22,8 +22,7 @@ Shader "mintea/peppermint"
         [hdr] _SubsurfaceColor ("Main/BRDF/Subsurface Scattering/Color", color) = (1,1,1,1)
 
         [Toggle] _AnisotropicsEnable("Main/BRDF/Anisotropics/Enable", Float) = 0
-        _AnisotropicsStrength("Main/BRDF/Anisotropics/Strength", Range(0, 1)) = 1
-
+        _AnisotropicsStrength("Main/BRDF/Anisotropics/Strength", Range(-1, 1)) = 1
 
 		_AOStrength("Main/AO Strength", Range(0, 1)) = 1
         _RoughnessStrength("Main/Roughness", Range(0, 1)) = 1
@@ -95,7 +94,7 @@ Shader "mintea/peppermint"
             #pragma target 5.0
             #pragma vertex vert
             #pragma fragment frag
-            #pragma multi_compile_fog
+            //#pragma multi_compile_fog
             #pragma multi_compile_fwdbase
 			#pragma multi_compile_instancing
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
@@ -125,7 +124,7 @@ Shader "mintea/peppermint"
             #pragma target 5.0
             #pragma vertex vert
             #pragma fragment frag
-            #pragma multi_compile_fog
+            //#pragma multi_compile_fog
 			#pragma multi_compile_fwdadd_fullshadows
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
             #pragma shader_feature_local _PM_FT_SUBSURFACE
