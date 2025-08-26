@@ -39,7 +39,7 @@ void InitAnisotropyData(inout AnisotropyData ad, in LightingData ld, in v2f i) {
         float3 anisotropicNormal = cross(anisotropicTangent, anisotropyDirection);
         float bendFactor = abs(ad.strength) * saturate(5.0 * _RoughnessPerceptual);
         float3 bentNormal = normalize(lerp(_NormalWS, anisotropicNormal, bendFactor));
-        ad.r = reflect(ld.viewDir, bentNormal);
+        ad.r = reflect(-ld.viewDir, bentNormal);
     #endif
 }
 
@@ -219,7 +219,7 @@ void InitLightingData(inout v2f i, inout LightingData ld, inout VertexLightingDa
     ld.f0 = f0;
 
     float3 h = normalize(lightDir + viewDir);
-    float3 r = reflect(viewDir, _NormalWS);
+    float3 r = reflect(-viewDir, _NormalWS);
     float NoV = abs(dot(_NormalWS, viewDir)) + 1e-5;
     float NoL = clamp(dot(_NormalWS, lightDir), 0.0, 1.0);
     float LoV = clamp(dot(lightDir, viewDir), 0.0, 1.0);

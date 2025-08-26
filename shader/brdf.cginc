@@ -251,9 +251,8 @@ float3 PrepareIndirectSpecularTerm(in LightingData ld)
 
     float3 Fr = E * ld.indirectSpecular;
 
-    // specular calculated AO (using AO from tex)
     Fr *= ComputeSpecularAO(ld.NoV, _Occlusion, _Roughness);
-    //horizon AO
+
     Fr *= ld.horizon * ld.horizon;
     
     return Fr;
