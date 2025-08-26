@@ -41,7 +41,7 @@ void ParseInputs(inout v2f i, in bool isFrontFace)
     _Metallic = orm.b * _MetallicStrength;
 
     float4 nm = TEX2D_SAMPLE_SAMPLER(_NormalMap, sampler_samplerDefault, i.uv0);
-    _Normal = lerp(float4(0.5, 0.5, 1, 1), ReconstructNormal(nm, _NormalStrength), _NormalStrength);
+    _Normal = ReconstructNormal(nm, _NormalStrength);
 
     float alpha = 1.0;
     if (_pm_nk_hasalpha)
@@ -56,7 +56,7 @@ void ParseInputs(inout v2f i, in bool isFrontFace)
     #endif
     
     float3 albedo = TEX2D_SAMPLE_SAMPLER(_DiffuseAlpha, sampler_samplerDefault, i.uv0).rgb;
-    _Albedo = albedo * _DiffuseHDR.rgb;
+    _Albedo = (albedo * _DiffuseHDR.rgb) * _DiffuseHDR.a;
 
     float3 emission = TEX2D_SAMPLE_SAMPLER(_EmissionMask, sampler_samplerDefault, i.uv0).rgb;
     _Emission = emission;
