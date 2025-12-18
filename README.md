@@ -1,5 +1,5 @@
 ### peppermint
-straightfoward Filament-based PBR shader targeting VRChat avatar usage, implementing an ORM workflow.
+straightforward Filament-based PBR shader targeting VRChat avatar usage, implementing an ORM workflow.
 
 ### "features"
 * [Filament](https://google.github.io/filament/Filament.md.html) based, with changes and features specific to VRChat without sacrificing the PBR look
