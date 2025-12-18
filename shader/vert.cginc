@@ -19,9 +19,8 @@ v2f vert (appdata v)
     o.uv2 = v.uv2;
     o.uv3 = v.uv3;
 
-    // method from Poiyomi's tile discard
-    // unused until a better ui is made for it
-    /*
+    // method from Poiyomi's udim discard
+
     #ifdef _PM_FT_UVTILEDISCARD
     	float2 udim = 0;
 
@@ -43,7 +42,6 @@ v2f vert (appdata v)
     		return (v2f)P_NAN;
     	}
     #endif
-    */
 
     #if defined(PASS_BASE)
         o.useVertexLights = false;

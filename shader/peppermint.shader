@@ -40,30 +40,30 @@ Shader "mintea/peppermint"
         [SingleLineTexture] _EmissionMap("Emission/Mask", 2D) = "white" {}
         _EmissionStrength("Emission/Strength", Range(0, 1)) = 0
 
-        //[Toggle] _UVTileDiscardEnable("UV Tile Discard/Enable", Float) = 0
-        //[Enum(UV0, 0, UV1, 1, UV2, 2, UV3, 3)] _UDIMDiscardUV("UV Tile Discard/UV", Float) = 0
+        [Toggle] _UVTileDiscardEnable("UV Tile Discard/Enable", Float) = 0
+        [Enum(UV0, 0, UV1, 1, UV2, 2, UV3, 3)] _UDIMDiscardUV("UV Tile Discard/UV", Float) = 0
 
-        // wip uv tile discard
+        // wip uv tile discard (ui needs... work)
         // much inspiration from Poiyomi
-        //[Toggle] _UDIMDiscardRow0_0("UV Tile Discard/0_0", Float) = 0
-        //[Toggle] _UDIMDiscardRow0_1("UV Tile Discard/0_1", Float) = 0
-        //[Toggle] _UDIMDiscardRow0_2("UV Tile Discard/0_2", Float) = 0
-        //[Toggle] _UDIMDiscardRow0_3("UV Tile Discard/0_3", Float) = 0
+        [Toggle] _UDIMDiscardRow0_0("UV Tile Discard/0_0", Float) = 0
+        [Toggle] _UDIMDiscardRow0_1("UV Tile Discard/0_1", Float) = 0
+        [Toggle] _UDIMDiscardRow0_2("UV Tile Discard/0_2", Float) = 0
+        [Toggle] _UDIMDiscardRow0_3("UV Tile Discard/0_3", Float) = 0
 
-        //[Toggle] _UDIMDiscardRow1_0("UV Tile Discard/1_0", Float) = 0
-        //[Toggle] _UDIMDiscardRow1_1("UV Tile Discard/1_1", Float) = 0
-        //[Toggle] _UDIMDiscardRow1_2("UV Tile Discard/1_2", Float) = 0
-        //[Toggle] _UDIMDiscardRow1_3("UV Tile Discard/1_3", Float) = 0
+        [Toggle] _UDIMDiscardRow1_0("UV Tile Discard/1_0", Float) = 0
+        [Toggle] _UDIMDiscardRow1_1("UV Tile Discard/1_1", Float) = 0
+        [Toggle] _UDIMDiscardRow1_2("UV Tile Discard/1_2", Float) = 0
+        [Toggle] _UDIMDiscardRow1_3("UV Tile Discard/1_3", Float) = 0
 
-        //[Toggle] _UDIMDiscardRow2_0("UV Tile Discard/2_0", Float) = 0
-        //[Toggle] _UDIMDiscardRow2_1("UV Tile Discard/2_1", Float) = 0
-        //[Toggle] _UDIMDiscardRow2_2("UV Tile Discard/2_2", Float) = 0
-        //[Toggle] _UDIMDiscardRow2_3("UV Tile Discard/2_3", Float) = 0
+        [Toggle] _UDIMDiscardRow2_0("UV Tile Discard/2_0", Float) = 0
+        [Toggle] _UDIMDiscardRow2_1("UV Tile Discard/2_1", Float) = 0
+        [Toggle] _UDIMDiscardRow2_2("UV Tile Discard/2_2", Float) = 0
+        [Toggle] _UDIMDiscardRow2_3("UV Tile Discard/2_3", Float) = 0
 
-        //[Toggle] _UDIMDiscardRow3_0("UV Tile Discard/3_0", Float) = 0
-        //[Toggle] _UDIMDiscardRow3_1("UV Tile Discard/3_1", Float) = 0
-        //[Toggle] _UDIMDiscardRow3_2("UV Tile Discard/3_2", Float) = 0
-        //[Toggle] _UDIMDiscardRow3_3("UV Tile Discard/3_3", Float) = 0
+        [Toggle] _UDIMDiscardRow3_0("UV Tile Discard/3_0", Float) = 0
+        [Toggle] _UDIMDiscardRow3_1("UV Tile Discard/3_1", Float) = 0
+        [Toggle] _UDIMDiscardRow3_2("UV Tile Discard/3_2", Float) = 0
+        [Toggle] _UDIMDiscardRow3_3("UV Tile Discard/3_3", Float) = 0
 
         _LightVolumesBias("Extra/Light Volumes Bias", Float) = 0
         [Toggle(_DOMINANTDIRSPECULARS_ON)] _DominantDirSpeculars("Extra/Dominant Dir Speculars", Float) = 0
