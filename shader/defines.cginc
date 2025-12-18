@@ -11,65 +11,87 @@ Texture2D _dfg_cloth;
 SamplerState dfg_bilinear_clamp_sampler;
 sampler2D _ditherPattern;
 float4 _ditherPattern_TexelSize;
-
-INIT_TEX2D_NOSAMPLER(_DiffuseAlpha);
-INIT_TEX2D_NOSAMPLER(_AlphaTex);
 float _pm_nk_hasalpha;
-INIT_TEX2D_NOSAMPLER(_ORMTexture);
-INIT_TEX2D_NOSAMPLER(_ThicknessTexture);
-INIT_TEX2D_NOSAMPLER(_NormalMap);
 
-INIT_TEX2D_NOSAMPLER(_EmissionMask);
-float4 _EmissionMask_ST;
-float4 _EmissionMask_TexelSize;
-float _EmissionStrength;
-float3 _EmissionColor;
-float3 _Emission;
-float _EmissionsEnable;
-
-float4 _DiffuseAlpha_ST;
-float4 _DiffuseAlpha_TexelSize;
-float4 _AlphaTex_ST;
-float4 _AlphaTex_TexelSize;
-float4 _ORMTexture_ST;
-float4 _ORMTexure_TexelSize;
-float4 _ThicknessTexture_ST;
-float4 _ThicknessTexture_TexelSize;
-float4 _NormalMap_ST;
-float4 _NormalMap_TexelSize;
-
+INIT_TEX2D_NOSAMPLER(_MainTex);
+float4 _MainTex_ST;
+float4 _MainTex_TexelSize;
 float3 _Albedo;
 float3 _Diffuse;
 float4 _DiffuseHDR;
+
+INIT_TEX2D_NOSAMPLER(_AlphaTex);
+float4 _AlphaTex_ST;
+float4 _AlphaTex_TexelSize;
+float _AlphaMode;
+float _Cutoff;
+float _Alpha;
+float _EnableAlphaDither;
+float _DitherAmount;
+float _DitherBias;
+
+INIT_TEX2D_NOSAMPLER(_ORMTexture);
+float4 _ORMTexture_ST;
+float4 _ORMTexure_TexelSize;
 float _Roughness;
 float _Occlusion;
 float _Metallic;
+float _RoughnessStrength;
 float _RoughnessPerceptual;
+float _MetallicStrength;
+float _AOStrength;
+
+INIT_TEX2D_NOSAMPLER(_BumpMap);
+float4 _BumpMap_ST;
+float4 _BumpMap_TexelSize;
 float3 _Normal;
 float3 _NormalWS;
 float _NormalStrength;
-float _Alpha;
-float _AOStrength;
-float _AlphaMode;
-float _AlphaCutoff;
-float _DitherAmount;
-float _DitherBias;
-float _FlipBackfaceNormals;
-float _EnableAlphaDither;
-float _ClampSpecular;
-float _RoughnessStrength;
-float _MetallicStrength;
-float _Thickness;
 
-float4 _SheenColor;
-float4 _SubsurfaceColor;
-float3 _Subsurface;
+#ifdef _PM_FT_SUBSURFACE
+    float4 _SubsurfaceColor;
+    float3 _Subsurface;
+#endif
 
-float _AnisotropicEnable;
-float _AnisotropicsStrength;
+#ifdef _PM_FT_EMISSIONS
+    INIT_TEX2D_NOSAMPLER(_EmissionMap);
+    float _EmissionsEnable;
+    float4 _EmissionMap_ST;
+    float4 _EmissionMap_TexelSize;
+    float _EmissionStrength;
+    float3 _EmissionColor;
+    float3 _Emission;
+#endif
 
-float3 _LightColor0;
+#ifdef _PM_FT_ANISOTROPICS
+    float _AnisotropicEnable;
+    float _AnisotropicsStrength;
+#endif
+
+#ifdef _PM_FT_UVTILEDISCARD
+    float _UDIMDiscardUV;
+    float _UDIMDiscardRow3_0;
+    float _UDIMDiscardRow3_1;
+    float _UDIMDiscardRow3_2;
+    float _UDIMDiscardRow3_3;
+    float _UDIMDiscardRow2_0;
+    float _UDIMDiscardRow2_1;
+    float _UDIMDiscardRow2_2;
+    float _UDIMDiscardRow2_3;
+    float _UDIMDiscardRow1_0;
+    float _UDIMDiscardRow1_1;
+    float _UDIMDiscardRow1_2;
+    float _UDIMDiscardRow1_3;
+    float _UDIMDiscardRow0_0;
+    float _UDIMDiscardRow0_1;
+    float _UDIMDiscardRow0_2;
+    float _UDIMDiscardRow0_3;
+#endif
+
+float4 _LightColor0;
 float4 samplerDefault;
+float _FlipBackfaceNormals;
+float _ClampSpecular;
 
 struct AnisotropyData
 {
@@ -82,6 +104,7 @@ struct AnisotropyData
 struct LightingData
 {
     float3 mainLightColor;
+    float mainLightAttenuation;
     float3 lightDir;
     float3 viewDir;
     float3 h;
@@ -144,6 +167,7 @@ struct v2f
     float3 worldPos : TEXCOORD5;
     float3 localPos : TEXCOORD6;
     bool useVertexLights : TEXCOORD7;
+    //UNITY_FOG_COORDS(8)
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
@@ -151,7 +175,10 @@ struct v2f
 #include "./third_party/LTCGI.cginc"
 #include "./util/util.cginc"
 #include "input.cginc"
-#include "brdf.cginc"
+#include "./shade/brdf.cginc"
+#include "./shade/shade_common.cginc"
+#include "./shade/shade_direct.cginc"
+#include "./shade/shade_indirect.cginc"
 #include "vert.cginc"
 #if defined(PASS_SHDW)
     #include "shadowcaster.cginc"

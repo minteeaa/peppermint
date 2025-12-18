@@ -18,11 +18,40 @@ v2f vert (appdata v)
     o.uv1 = v.uv1;
     o.uv2 = v.uv2;
     o.uv3 = v.uv3;
+
+    // method from Poiyomi's tile discard
+    // unused until a better ui is made for it
+    /*
+    #ifdef _PM_FT_UVTILEDISCARD
+    	float2 udim = 0;
+
+    	udim += (v.uv0.xy * (_UDIMDiscardUV == 0));
+    	udim += (v.uv1.xy * (_UDIMDiscardUV == 1));
+    	udim += (v.uv2.xy * (_UDIMDiscardUV == 2));
+    	udim += (v.uv3.xy * (_UDIMDiscardUV == 3));
+    
+    	float4 UDIMDiscardRows[4];
+    	UDIMDiscardRows[0] = float4(_UDIMDiscardRow0_0, _UDIMDiscardRow0_1, _UDIMDiscardRow0_2, _UDIMDiscardRow0_3);
+    	UDIMDiscardRows[1] = float4(_UDIMDiscardRow1_0, _UDIMDiscardRow1_1, _UDIMDiscardRow1_2, _UDIMDiscardRow1_3);
+    	UDIMDiscardRows[2] = float4(_UDIMDiscardRow2_0, _UDIMDiscardRow2_1, _UDIMDiscardRow2_2, _UDIMDiscardRow2_3);
+    	UDIMDiscardRows[3] = float4(_UDIMDiscardRow3_0, _UDIMDiscardRow3_1, _UDIMDiscardRow3_2, _UDIMDiscardRow3_3);
+    
+    	float shouldDiscard = SetDiscard(udim, UDIMDiscardRows);
+    
+    	if(shouldDiscard < 0)
+    	{
+    		return (v2f)P_NAN;
+    	}
+    #endif
+    */
+
     #if defined(PASS_BASE)
         o.useVertexLights = false;
         #if defined(VERTEXLIGHT_ON)
             o.useVertexLights = true;
         #endif
     #endif
+
+    //UNITY_TRANSFER_FOG(o, o.vertex);
     return o;
 }

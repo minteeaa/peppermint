@@ -172,7 +172,7 @@ public class peppermint_ui : ShaderGUI
         {
             var states = foldoutStates[material];
             if (!states.TryGetValue(folder.path, out bool expanded))
-                expanded = true;
+                expanded = false;
 
                 expanded = PepperFoldout(
                     ref expanded,
@@ -249,6 +249,10 @@ public class peppermint_ui : ShaderGUI
         ToggleKeyword(sss == 1, "_PM_FT_SUBSURFACE", material);
         float aso = material.GetFloat("_AnisotropicsEnable");
         ToggleKeyword(aso == 1, "_PM_FT_ANISOTROPICS", material);
+        float utd = material.GetFloat("_UVTileDiscardEnable");
+        ToggleKeyword(utd == 1, "_PM_FT_UVTILEDISCARD", material);
+        float ems = material.GetFloat("_EmissionsEnable");
+        ToggleKeyword(ems == 1, "_PM_FT_EMISSIONS", material);
     }
 
     private void TexCheck(bool condition, string guid, string property, MaterialProperty[] properties)
@@ -279,6 +283,13 @@ public class peppermint_ui : ShaderGUI
                 
             TexCheck(
                 material.GetTexture("_dfg_cloth") == null, 
+                "3a4f51f7f57ed78428e302e36b886334",
+                "_dfg_cloth",
+                properties
+            );
+
+            TexCheck(
+                material.GetTexture("_dfg_cloth").ToString() != "dfg_cloth", 
                 "3a4f51f7f57ed78428e302e36b886334",
                 "_dfg_cloth",
                 properties

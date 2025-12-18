@@ -14,12 +14,17 @@ float4 frag (v2f i, bool isFrontFace : SV_IsFrontFace) : SV_Target
     VertexLightingData vld = (VertexLightingData)0;
     AnisotropyData ad = (AnisotropyData)0;
     InitLightingData(i, ld, vld, ad);
-    ApplyLTCGI(i, ld);
-    ApplyLighting(ld, vld, ad, i);
-    ApplyEmission(ld);
+    shadeDirect(ld, ad);
+    shadeIndirect(ld, ad);
+    shadeVertex(vld, ld, ad, i);
+    shadeLTCGI(i, ld);
+    #ifdef _PM_FT_EMISSIONS
+        ApplyEmission(ld);
+    #endif
 
     float4 col = float4(ld.surfaceColor.x, ld.surfaceColor.y, ld.surfaceColor.z, _Alpha);
 
     col.r += samplerDefault.r;
+    //UNITY_APPLY_FOG(i.fogCoord, col);
     return col;
 }

@@ -7,7 +7,7 @@ float GetDither(inout v2f i)
 }
 
 float CutoutAlpha(float alpha) {
-    return alpha - _AlphaCutoff;
+    return alpha - _Cutoff;
 }
 
 float AlphaDither(inout v2f i, float alpha)
@@ -35,37 +35,32 @@ float AlphaBlend(inout v2f i, in float alpha, in float type)
 
 void ParseInputs(inout v2f i, in bool isFrontFace) 
 {
-    float4 orm = TEX2D_SAMPLE_SAMPLER(_ORMTexture, sampler_samplerDefault, i.uv0);
-    _Occlusion = lerp(1, orm.r, _AOStrength);
-    _RoughnessPerceptual = saturate(max(orm.g, 0.045)) * _RoughnessStrength;
-    _Metallic = orm.b * _MetallicStrength;
+    float3 sampledORM = TEX2D_SAMPLE_SAMPLER(_ORMTexture, sampler_samplerDefault, i.uv0).rgb;
+    float4 sampledBumpMap = TEX2D_SAMPLE_SAMPLER(_BumpMap, sampler_samplerDefault, i.uv0);
+    float4 sampledMainTex = TEX2D_SAMPLE_SAMPLER(_MainTex, sampler_samplerDefault, i.uv0);
 
-    float4 nm = TEX2D_SAMPLE_SAMPLER(_NormalMap, sampler_samplerDefault, i.uv0);
-    _Normal = ReconstructNormal(nm, _NormalStrength);
+    _Occlusion = lerp(1, sampledORM.r, _AOStrength);
+    _RoughnessPerceptual = saturate(max(sampledORM.g, 0.001)) * _RoughnessStrength;
+    _Metallic = sampledORM.b * _MetallicStrength;
+    _Normal = ReconstructNormal(sampledBumpMap, _NormalStrength);
 
     float alpha = 1.0;
     if (_pm_nk_hasalpha)
         alpha = TEX2D_SAMPLE_SAMPLER(_AlphaTex, sampler_samplerDefault, i.uv0).r;
     else
-        alpha = TEX2D_SAMPLE_SAMPLER(_DiffuseAlpha, sampler_samplerDefault, i.uv0).a;
+        alpha = sampledMainTex.a;
 
     #ifdef _PM_FT_SUBSURFACE
-        _Thickness = TEX2D_SAMPLE_SAMPLER(_ThicknessTexture, sampler_samplerDefault, i.uv0).r;
-    #else
-        _Thickness = 1.0;
+        _Subsurface = _SubsurfaceColor.rgb;
+    #endif
+
+    #ifdef _PM_FT_EMISSIONS
+        _Emission = TEX2D_SAMPLE_SAMPLER(_EmissionMap, sampler_samplerDefault, i.uv0).rgb;
     #endif
     
-    float3 albedo = TEX2D_SAMPLE_SAMPLER(_DiffuseAlpha, sampler_samplerDefault, i.uv0).rgb;
-    _Albedo = (albedo * _DiffuseHDR.rgb) * _DiffuseHDR.a;
-
-    float3 emission = TEX2D_SAMPLE_SAMPLER(_EmissionMask, sampler_samplerDefault, i.uv0).rgb;
-    _Emission = emission;
-
-    _Roughness = max(_RoughnessPerceptual * _RoughnessPerceptual, 0.001);
+    _Albedo = (sampledMainTex.rgb * _DiffuseHDR.rgb) * _DiffuseHDR.a;
+    _Roughness = _RoughnessPerceptual * _RoughnessPerceptual;
     _NormalWS = TangentToWorld(i, _Normal);
-
     _Diffuse = _Albedo * (1.0 - _Metallic);
     _Alpha = AlphaBlend(i, alpha, _AlphaMode) * _DiffuseHDR.a;
-
-    _Subsurface = _SubsurfaceColor.rgb * _Diffuse;
 }

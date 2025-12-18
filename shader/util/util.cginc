@@ -6,6 +6,28 @@ void InitializeDefaultSampler(out float4 defaultSampler)
     defaultSampler = TEX2D_SAMPLE_SAMPLER(_samplerDefault, sampler_samplerDefault, 0) * EPSILON;
 }
 
+// derived from Poiyomi's implementation
+float SetDiscard(float2 udim, float4 UDIMDiscardRows[4])
+{
+	float toDiscard = 0;
+	float4 xMask = float4(
+        (udim.x >= 0 && udim.x < 1),
+        (udim.x >= 1 && udim.x < 2),
+        (udim.x >= 2 && udim.x < 3),
+        (udim.x >= 3 && udim.x < 4)
+    );
+	
+	toDiscard += (udim.y >= 0 && udim.y < 1) * dot(UDIMDiscardRows[0], xMask);
+	toDiscard += (udim.y >= 1 && udim.y < 2) * dot(UDIMDiscardRows[1], xMask);
+	toDiscard += (udim.y >= 2 && udim.y < 3) * dot(UDIMDiscardRows[2], xMask);
+	toDiscard += (udim.y >= 3 && udim.y < 4) * dot(UDIMDiscardRows[3], xMask);
+	
+	toDiscard *= any(float4(udim.y >= 0, udim.y < 4, udim.x >= 0, udim.x < 4)); 
+    
+	const float threshold = 0.001;
+	return threshold - toDiscard;
+}
+
 void FlipNormals(inout v2f i, in bool isFrontFace)
 {
     i.normal = normalize(i.normal);
@@ -45,8 +67,10 @@ void InitAnisotropyData(inout AnisotropyData ad, in LightingData ld, in v2f i) {
 
 void ApplyEmission(inout LightingData ld) 
 {
-    float3 emissive = _EmissionColor * _Emission * _EmissionStrength;
-    ld.surfaceColor += emissive * _EmissionsEnable;
+    #ifdef _PM_FT_EMISSIONS
+        float3 emissive = _EmissionColor * _Emission * _EmissionStrength;
+        ld.surfaceColor += emissive * _EmissionsEnable;
+    #endif
 }
 
 float3 ReconstructNormal(in float4 i, in float scale)
@@ -68,6 +92,11 @@ float3 ReconstructNormal(in float4 i, in float scale)
 float3 GetMainLightColor()
 {
     return _LightColor0.rgb;
+}
+
+float GetMainLightAttenuation() 
+{
+    return _LightColor0.a;
 }
 
 // does the same thing as Unity and LightVolumes' eval functions
@@ -194,19 +223,12 @@ void InitVertexLightsData(inout v2f i, in LightingData ld, inout VertexLightingD
     #endif
 }
 
-
-void ApplyLTCGI(inout v2f i, inout LightingData ld)
-{
-    GetLTCGI(i, ld);
-    ld.indirectDiffuse += ld.ltcgiDiffuse;
-    ld.indirectSpecular += ld.ltcgiSpecular;
-}
-
 void InitLightingData(inout v2f i, inout LightingData ld, inout VertexLightingData vld, inout AnisotropyData ad)
 {
     float3 lightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
     float3 viewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
     float3 mainLightColor = GetMainLightColor();
+    float mainLightAttenuation = GetMainLightAttenuation();
     float3 diffuseColor = float3(1, 1, 1);
     float3 surfaceColor = float3(0, 0, 0);
     float f0 = lerp(0.04, _Albedo.xyz, _Metallic);
@@ -214,6 +236,7 @@ void InitLightingData(inout v2f i, inout LightingData ld, inout VertexLightingDa
     ld.lightDir = lightDir;
     ld.viewDir = viewDir;
     ld.mainLightColor = mainLightColor;
+    ld.mainLightAttenuation = mainLightAttenuation;
     ld.diffuseColor = diffuseColor;
     ld.surfaceColor = surfaceColor;
     ld.f0 = f0;

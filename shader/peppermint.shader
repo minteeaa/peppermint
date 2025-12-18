@@ -3,22 +3,27 @@ Shader "mintea/peppermint"
 	Properties
 	{
         [HideInInspector] _dfg("GXX DFG", 2D) = "white" {}
-        [HideInInspector] _dfg_cloth("Cloth DFG", 2D) = "white" {}
+        [HideInInspector] [SingleLineTexture] _dfg_cloth("Cloth DFG", 2D) = "white" {}
         [HideInInspector] _samplerDefault("", 2D) = "white" {}
         [HideInInspector] _ditherPattern("Dither", 2D) = "white" {}
         [HideInInspector] _pm_nk_hasalpha("_hasalpha", Range(0, 1)) = 0
 
 		[SingleLineTexture] _ORMTexture("Main/Textures/ORM", 2D) = "white" {}
-        [SingleLineTexture][Normal] _NormalMap("Main/Textures/Normal Map", 2D) = "bump" {}
-        [hdr] _DiffuseHDR ("Main/Textures/Diffuse Color", color) = (1,1,1,1)
-        [SingleLineTexture] _DiffuseAlpha("Main/Textures/Diffuse", 2D) = "white" {}
+        [SingleLineTexture][Normal] _BumpMap("Main/Textures/Normal Map", 2D) = "bump" {}
+        [hdr] _DiffuseHDR("Main/Textures/Diffuse Color", color) = (1,1,1,1)
+        [SingleLineTexture] _MainTex("Main/Textures/Diffuse", 2D) = "white" {}
         [SingleLineTexture] _AlphaTex("Main/Textures/Alpha", 2D) = "white" {}
+
+        [Enum(Opaque, 0, Cutout, 1, Transparent, 2)] _AlphaMode ("Main/Alpha/Mode", Float) = 0
+        _Cutoff("Main/Alpha/Cutoff", Range(0, 1)) = 0.5
+        [Toggle] _EnableAlphaDither("Main/Alpha/Dither", Float) = 0
+        _DitherAmount("Main/Alpha/Dither Amount", Range(0, 1)) = 0.5
+        _DitherBias("Main/Alpha/Dither Bias", Range(0, 1)) = 0.5
 
         [Enum(GGX, 0, Charlie, 1)] _DiffuseNDF("Main/BRDF/NDF/Diffuse NDF", Float) = 0
         [hdr] _SheenColor ("Main/BRDF/NDF/Sheen Color", color) = (1,1,1,1)
 
         [Toggle] _SubsurfaceEnable("Main/BRDF/Subsurface Scattering/Enable", Float) = 0
-        [SingleLineTexture] _ThicknessTexture("Main/BRDF/Subsurface Scattering/Thickness", 2D) = "white" {}
         [hdr] _SubsurfaceColor ("Main/BRDF/Subsurface Scattering/Color", color) = (1,1,1,1)
 
         [Toggle] _AnisotropicsEnable("Main/BRDF/Anisotropics/Enable", Float) = 0
@@ -31,19 +36,39 @@ Shader "mintea/peppermint"
         [Toggle] _ClampSpecular("Main/Clamp Specular", Float) = 0
 
         [Toggle] _EmissionsEnable("Emission/Enable", Float) = 0
-        [hdr] _EmissionColor ("Emission/Color", color) = (1,1,1,1)
-        [SingleLineTexture] _EmissionMask("Emission/Mask", 2D) = "white" {}
+        [hdr] _EmissionColor("Emission/Color", color) = (1,1,1,1)
+        [SingleLineTexture] _EmissionMap("Emission/Mask", 2D) = "white" {}
         _EmissionStrength("Emission/Strength", Range(0, 1)) = 0
+
+        //[Toggle] _UVTileDiscardEnable("UV Tile Discard/Enable", Float) = 0
+        //[Enum(UV0, 0, UV1, 1, UV2, 2, UV3, 3)] _UDIMDiscardUV("UV Tile Discard/UV", Float) = 0
+
+        // wip uv tile discard
+        // much inspiration from Poiyomi
+        //[Toggle] _UDIMDiscardRow0_0("UV Tile Discard/0_0", Float) = 0
+        //[Toggle] _UDIMDiscardRow0_1("UV Tile Discard/0_1", Float) = 0
+        //[Toggle] _UDIMDiscardRow0_2("UV Tile Discard/0_2", Float) = 0
+        //[Toggle] _UDIMDiscardRow0_3("UV Tile Discard/0_3", Float) = 0
+
+        //[Toggle] _UDIMDiscardRow1_0("UV Tile Discard/1_0", Float) = 0
+        //[Toggle] _UDIMDiscardRow1_1("UV Tile Discard/1_1", Float) = 0
+        //[Toggle] _UDIMDiscardRow1_2("UV Tile Discard/1_2", Float) = 0
+        //[Toggle] _UDIMDiscardRow1_3("UV Tile Discard/1_3", Float) = 0
+
+        //[Toggle] _UDIMDiscardRow2_0("UV Tile Discard/2_0", Float) = 0
+        //[Toggle] _UDIMDiscardRow2_1("UV Tile Discard/2_1", Float) = 0
+        //[Toggle] _UDIMDiscardRow2_2("UV Tile Discard/2_2", Float) = 0
+        //[Toggle] _UDIMDiscardRow2_3("UV Tile Discard/2_3", Float) = 0
+
+        //[Toggle] _UDIMDiscardRow3_0("UV Tile Discard/3_0", Float) = 0
+        //[Toggle] _UDIMDiscardRow3_1("UV Tile Discard/3_1", Float) = 0
+        //[Toggle] _UDIMDiscardRow3_2("UV Tile Discard/3_2", Float) = 0
+        //[Toggle] _UDIMDiscardRow3_3("UV Tile Discard/3_3", Float) = 0
 
         _LightVolumesBias("Extra/Light Volumes Bias", Float) = 0
         [Toggle(_DOMINANTDIRSPECULARS_ON)] _DominantDirSpeculars("Extra/Dominant Dir Speculars", Float) = 0
 
         [Toggle] _FlipBackfaceNormals("Rendering/Flip Backface Normals", Float) = 1
-        [Enum(Opaque, 0, Cutout, 1, Transparent, 2)] _AlphaMode ("Main/Alpha/Mode", Float) = 0
-        _AlphaCutoff("Main/Alpha/Cutoff", Range(0, 1)) = 0.5
-        [Toggle] _EnableAlphaDither("Main/Alpha/Dither", Float) = 0
-        _DitherAmount("Main/Alpha/Dither Amount", Range(0, 1)) = 0.5
-        _DitherBias("Main/Alpha/Dither Bias", Range(0, 1)) = 0.5
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Rendering/Cull", Float) = 2
 		[Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Rendering/ZTest", Float) = 4
 		[Toggle] _ZWrite ("Rendering/ZWrite", Int) = 1
@@ -98,8 +123,10 @@ Shader "mintea/peppermint"
             #pragma multi_compile_fwdbase
 			#pragma multi_compile_instancing
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
+            #pragma shader_feature_local _PM_FT_EMISSIONS
             #pragma shader_feature_local _PM_FT_SUBSURFACE
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
+            #pragma shader_feature_local _PM_FT_UVTILEDISCARD
             #define PASS_BASE
             #include "UnityCG.cginc"
             #include "defines.cginc"
@@ -127,8 +154,10 @@ Shader "mintea/peppermint"
             //#pragma multi_compile_fog
 			#pragma multi_compile_fwdadd_fullshadows
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
+            #pragma shader_feature_local _PM_FT_EMISSIONS
             #pragma shader_feature_local _PM_FT_SUBSURFACE
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
+            #pragma shader_feature_local _PM_FT_UVTILEDISCARD
             #define PASS_ADD
             #include "UnityCG.cginc"
             #include "defines.cginc"
@@ -152,6 +181,7 @@ Shader "mintea/peppermint"
             #pragma fragment frag
 			#pragma multi_compile_instancing
             #pragma multi_compile_shadowcaster
+            #pragma shader_feature_local _PM_FT_UVTILEDISCARD
             #define PASS_SHDW
             #include "UnityCG.cginc"
             #include "defines.cginc"
