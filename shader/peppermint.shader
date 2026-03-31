@@ -2,10 +2,10 @@ Shader "mintea/peppermint"
 {
 	Properties
 	{
-        [HideInInspector] _dfg("GXX DFG", 2D) = "white" {}
-        [HideInInspector] [SingleLineTexture] _dfg_cloth("Cloth DFG", 2D) = "white" {}
-        [HideInInspector] _samplerDefault("", 2D) = "white" {}
-        [HideInInspector] _ditherPattern("Dither", 2D) = "white" {}
+        [SingleLineTexture] _dfg("GGX DFG", 2D) = "white" {}
+        [SingleLineTexture] _dfg_cloth("Cloth DFG", 2D) = "white" {}
+        [HideInInspector] [SingleLineTexture] _samplerDefault("", 2D) = "white" {}
+        [SingleLineTexture] _ditherPattern("Dither", 2D) = "white" {}
         [HideInInspector] _pm_nk_hasalpha("_hasalpha", Range(0, 1)) = 0
 
 		[SingleLineTexture] _ORMTexture("Main/Textures/ORM", 2D) = "white" {}
@@ -15,7 +15,7 @@ Shader "mintea/peppermint"
         [SingleLineTexture] _AlphaTex("Main/Textures/Alpha", 2D) = "white" {}
 
         [Enum(Opaque, 0, Cutout, 1, Transparent, 2)] _AlphaMode ("Main/Alpha/Mode", Float) = 0
-        _Cutoff("Main/Alpha/Cutoff", Range(0, 1)) = 0.5
+        _AlphaCutoff("Main/Alpha/Cutoff", Range(0, 1)) = 0.5
         [Toggle] _EnableAlphaDither("Main/Alpha/Dither", Float) = 0
         _DitherAmount("Main/Alpha/Dither Amount", Range(0, 1)) = 0.5
         _DitherBias("Main/Alpha/Dither Bias", Range(0, 1)) = 0.5
@@ -100,13 +100,52 @@ Shader "mintea/peppermint"
     CustomEditor "peppermint_ui" 
     SubShader
     {
+        Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" }
+
+        Pass
+        {
+            Name "FORWARD_URP"
+            Tags { "LightMode" = "UniversalForward" }
+            ZWrite [_ZWrite]
+            ZClip [_ZClip]
+
+            Cull [_Cull]
+            ZTest [_ZTest]
+            BlendOp [_BlendOp], [_BlendOpAlpha]
+            Blend [_SrcBlend] [_DstBlend], [_SrcBlendAlpha] [_DstBlendAlpha]
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            //#pragma multi_compile_fog
+            #pragma multi_compile _ PROBE_VOLUMES_L1 PROBE_VOLUMES_L2
+            #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
+            #pragma shader_feature_local _PM_FT_EMISSIONS
+            #pragma shader_feature_local _PM_FT_SUBSURFACE
+            #pragma shader_feature_local _PM_FT_ANISOTROPICS
+            #pragma shader_feature_local _PM_FT_UVTILEDISCARD
+            #define PASS_BASE_URP
+            #define PIPE_URP
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/GlobalIllumination.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/Runtime/Lighting/ProbeVolume/ProbeVolume.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/AmbientProbe.hlsl"
+            #include "defines.cginc"
+            ENDHLSL
+        }
+    }
+
+    SubShader
+    {
         Tags { "RenderType" = "Opaque" "Queue" = "Geometry" "VRCFallback" = "Standard" "LTCGI"="ALWAYS" }
         LOD 200
 
         Pass
         {
             Name "FORWARD"
-            Tags {"LightMode" = "ForwardBase"}
+            Tags { "LightMode" = "ForwardBase" }
             ZWrite [_ZWrite]
             ZClip [_ZClip]
 
@@ -128,7 +167,9 @@ Shader "mintea/peppermint"
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
             #pragma shader_feature_local _PM_FT_UVTILEDISCARD
             #define PASS_BASE
+            #define PIPE_BIRP
             #include "UnityCG.cginc"
+            #include "UnityPBSLighting.cginc"
             #include "defines.cginc"
             ENDCG
         }
@@ -136,7 +177,7 @@ Shader "mintea/peppermint"
         Pass
         {
             Name "ADD"
-            Tags {"LightMode" = "ForwardAdd"}
+            Tags { "LightMode" = "ForwardAdd" }
             ZWrite Off
             ZClip [_ZClip]
             Fog {Color (0,0,0,0)}
@@ -159,7 +200,9 @@ Shader "mintea/peppermint"
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
             #pragma shader_feature_local _PM_FT_UVTILEDISCARD
             #define PASS_ADD
+            #define PIPE_BIRP
             #include "UnityCG.cginc"
+            #include "UnityPBSLighting.cginc"
             #include "defines.cginc"
             ENDCG
         }
@@ -167,7 +210,7 @@ Shader "mintea/peppermint"
         Pass
         {
             Name "SHADOWCASTER"
-            Tags {"LightMode" = "ShadowCaster"}
+            Tags { "LightMode" = "ShadowCaster" }
             ZWrite [_ZWrite]
 
             Cull [_Cull]
@@ -183,7 +226,9 @@ Shader "mintea/peppermint"
             #pragma multi_compile_shadowcaster
             #pragma shader_feature_local _PM_FT_UVTILEDISCARD
             #define PASS_SHDW
+            #define PIPE_BIRP
             #include "UnityCG.cginc"
+            #include "UnityPBSLighting.cginc"
             #include "defines.cginc"
             ENDCG
         }

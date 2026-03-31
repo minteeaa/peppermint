@@ -21,9 +21,8 @@ void callback_specular(inout accumulator_struct acc, in ltcgi_output output) {
     acc.specular += output.intensity * output.color;
 }
 
-void GetLTCGI(in v2f i, inout LightingData ld){
+accumulator_struct GetLTCGI(in pmInput i, in pmLightingData ld){
     accumulator_struct acc = (accumulator_struct)0;
     LTCGI_Contribution(acc, i.worldPos, _NormalWS, ld.viewDir, _Roughness, i.uv1);
-    ld.ltcgiSpecular = acc.specular;
-    ld.ltcgiDiffuse = acc.diffuse;
+    return acc;
 }

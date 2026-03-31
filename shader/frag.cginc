@@ -1,30 +1,62 @@
-float4 frag (v2f i, bool isFrontFace : SV_IsFrontFace) : SV_Target
-{
-    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-    InitializeDefaultSampler(samplerDefault);
-    
-    if (_FlipBackfaceNormals > 0.1)
+#if defined(PIPE_BIRP)
+    half4 frag (v2f i, bool isFrontFace : SV_IsFrontFace) : SV_Target
     {
-        FlipNormals(i, isFrontFace);
-    }
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+        InitializeDefaultSampler(samplerDefault);
+
+        half3 color = 0;
+        pmInput input = inputAdapt(i);
+        prepareSurface(input, isFrontFace);
+        sampleProperties(input);
+
+        pmLightData ld = prepareLightData(input);
+        pmAnisotropyData ad = prepareAnisotropyData(ld, input);
+        VertexLightingData vld = (VertexLightingData)0;
         
-    ParseInputs(i, isFrontFace);
-    InitMiscData(i);
-    LightingData ld = (LightingData)0;
-    VertexLightingData vld = (VertexLightingData)0;
-    AnisotropyData ad = (AnisotropyData)0;
-    InitLightingData(i, ld, vld, ad);
-    shadeDirect(ld, ad);
-    shadeIndirect(ld, ad);
-    shadeVertex(vld, ld, ad, i);
-    shadeLTCGI(i, ld);
-    #ifdef _PM_FT_EMISSIONS
-        ApplyEmission(ld);
-    #endif
+        prepareIndirect(input, ld, ad);
+        prepareDirect(ld, ad);
 
-    float4 col = float4(ld.surfaceColor.x, ld.surfaceColor.y, ld.surfaceColor.z, _Alpha);
+        color += shadeDirectDiffuse(ld);
+        color += shadeDirectSpecular(ld);
+        color += shadeIndirectSpecular(ld);
+        color += shadeIndirectDiffuse(ld);
+            
+        #if defined(LTCGI_INCLUDED)
+            shadeLTCGI(input, ld);
+        #endif
+        #if defined(_PM_FT_EMISSIONS)
+            addEmission(ld);
+        #endif
 
-    col.r += samplerDefault.r;
-    //UNITY_APPLY_FOG(i.fogCoord, col);
-    return col;
-}
+        float4 col = half4(color, _Alpha);
+        col.r += samplerDefault.r;
+
+        //UNITY_APPLY_FOG(i.fogCoord, col);
+        return col;
+    }
+#elif defined(PIPE_URP)
+    half4 frag(Varyings i, bool isFrontFace: SV_IsFrontFace) : SV_Target
+    {
+        half3 color = 0;
+        pmInput input = inputAdapt(i);
+        prepareSurface(input, isFrontFace);
+        sampleProperties(input);
+
+        pmLightData ld = prepareLightData(input);
+        pmAnisotropyData ad = prepareAnisotropyData(ld, input);
+
+        prepareIndirect(input, ld, ad);
+        prepareDirect(ld, ad);
+
+        color += shadeDirectDiffuse(ld);
+        color += shadeDirectSpecular(ld);
+        color += shadeIndirectSpecular(ld);
+        color += shadeIndirectDiffuse(ld);
+
+        #if defined(_PM_FT_EMISSIONS)
+            color += addEmission(ld);
+        #endif
+
+        return half4(color, _Alpha);
+    }
+#endif

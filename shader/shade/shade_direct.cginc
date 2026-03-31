@@ -1,5 +1,6 @@
-float3 specularLobe(LightingData ld, AnisotropyData ad) {
-    float3 Fr = 0;
+half3 sampleDirectSpecular(pmLightData ld, pmAnisotropyData ad)
+{
+    half3 Fr = 0;
     #ifdef _PM_NDF_GGX
         #ifdef _PM_FT_ANISOTROPICS
             Fr = anisotropic(ld.h, ld.viewDir, ld.lightDir, ad.t, ad.b, ld.NoV, ld.NoH, ld.NoL, ld.LoH, ld.f0, _Roughness);
@@ -8,21 +9,19 @@ float3 specularLobe(LightingData ld, AnisotropyData ad) {
         #endif
     #endif
     #ifdef _PM_NDF_CHARLIE
-        float3 isoCloth = isotropicCloth(ld.NoH, ld.NoV, ld.NoL, _Roughness, ld.f0);
-        float3 iso = isotropic(ld.NoH, ld.NoV, ld.LoH, ld.NoL, ld.f0, _Roughness);
+        half3 isoCloth = isotropicCloth(ld.NoH, ld.NoV, ld.NoL, _Roughness, ld.f0);
+        half3 iso = isotropic(ld.NoH, ld.NoV, ld.LoH, ld.NoL, ld.f0, _Roughness);
         Fr = lerp(isoCloth, iso, _Metallic);
     #endif
 
     if (_ClampSpecular) 
-    {
         Fr = Fr / (1.0 + Fr);
-    }
 
     return Fr;
 }
 
-float3 vertexSpecularLobe(VertexLightingData vld, LightingData ld, AnisotropyData ad, int index) {
-    float3 vFr = 0;
+half3 vertexSpecularLobe(VertexLightingData vld, pmLightData ld, pmAnisotropyData ad, int index) {
+    half3 vFr = 0;
     #ifdef _PM_NDF_GGX
         #ifdef _PM_FT_ANISOTROPICS
             vFr = anisotropic(vld.h[index], ld.viewDir, vld.lightDir[index], ad.t, ad.b, ld.NoV, vld.NoH[index], vld.NoL[index], vld.LoH[index], ld.f0, _Roughness);
@@ -31,76 +30,79 @@ float3 vertexSpecularLobe(VertexLightingData vld, LightingData ld, AnisotropyDat
         #endif
     #endif
     #ifdef _PM_NDF_CHARLIE
-        float3 vIsoCloth = isotropicCloth(vld.NoH[index], ld.NoV, vld.NoL[index], _Roughness, ld.f0);
-        float3 vIso = isotropic(vld.NoH[index], ld.NoV, vld.LoH[index], vld.NoL[index], ld.f0, _Roughness);
+        half3 vIsoCloth = isotropicCloth(vld.NoH[index], ld.NoV, vld.NoL[index], _Roughness, ld.f0);
+        half3 vIso = isotropic(vld.NoH[index], ld.NoV, vld.LoH[index], vld.NoL[index], ld.f0, _Roughness);
         vFr = lerp(vIsoCloth, vIso, _Metallic);
     #endif
 
     if (_ClampSpecular) 
-    {
         vFr = vFr / (1.0 + vFr);
-    }
 
     return vFr;
 }
 
-float3 diffuseLobe(LightingData ld) {
-    float Fd = diffuse(ld.NoL, ld.LoV, ld.NoV, _Roughness, _Diffuse);
+half3 sampleDirectDiffuse(in pmLightData ld) {
+    half Fd = diffuse(ld.NoL, ld.LoV, ld.NoV, _Roughness, _Diffuse);
     #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
-        Fd *= Fd_Wrap(dot(_NormalWS, ld.lightDir), 0.5);
+        Fd *= pm_Fd_Wrap(dot(_NormalWS, ld.lightDir), 0.5);
     #endif
     return _Diffuse * Fd;
 }
 
-float3 vertexDiffuseLobe(VertexLightingData vld, LightingData ld, int index)
+float3 vertexDiffuseLobe(VertexLightingData vld, pmLightData ld, int index)
 {
-    float LoV = clamp(dot(vld.lightDir[index], ld.viewDir), 0.0, 1.0);
-    float3 vFd = diffuse(vld.NoL[index], LoV, ld.NoV, _Roughness, _Diffuse);
+    half LoV = clamp(dot(vld.lightDir[index], ld.viewDir), 0.0, 1.0);
+    half3 vFd = diffuse(vld.NoL[index], LoV, ld.NoV, _Roughness, _Diffuse);
 
     #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
-        vFd *= Fd_Wrap(dot(_NormalWS, vld.lightDir[index]), 0.5);
+        vFd *=pm_Fd_Wrap(dot(_NormalWS, vld.lightDir[index]), 0.5);
     #endif
 
     return _Diffuse * vFd;
 }
 
-void shadeDirect(inout LightingData ld, inout AnisotropyData ad) {
-    PrepareEnergyCompensation(ld);
-
-    if (ld.NoL > 0) 
-    {
-        float3 Fr = specularLobe(ld, ad);
-        float3 Fd = diffuseLobe(ld);
-        float3 color = 0;
-
-        #ifdef _PM_NDF_CHARLIE
-            #ifdef _PM_FT_SUBSURFACE
-                // simulated non-physically based subsurface scattering for cloth materials
-                Fd *= saturate(_Subsurface + ld.NoL);
-                color = Fd + Fr * ld.NoL;
-                color *= ld.mainLightColor * ld.mainLightAttenuation;
-            #else 
-                color = Fd + Fr;
-                color *= ld.mainLightColor * ld.mainLightAttenuation * ld.NoL;
-            #endif
-        #else 
-            color = Fd + Fr * ld.energyCompensation;
-            color *= ld.mainLightColor * ld.mainLightAttenuation * ld.NoL;
-        #endif
-
-        ld.surfaceColor += color;
-    }
+void prepareDirect(inout pmLightData ld, in pmAnisotropyData ad)
+{
+    ld.directDiffuse += sampleDirectDiffuse(ld);
+    ld.directSpecular += sampleDirectSpecular(ld, ad);
 }
 
-void shadeVertex(inout VertexLightingData vld, inout LightingData ld, inout AnisotropyData ad, in v2f i) {
+half3 shadeDirectDiffuse(in pmLightData ld)
+{
+    if (ld.NoL <= 0) return 0;
+
+    half3 color = ld.directDiffuse;
+    #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
+        color *= saturate(_Subsurface + ld.NoL);
+        color *= ld.mainLightColor * ld.mainLightAttenuation;
+    #else
+        color *= ld.mainLightColor * ld.mainLightAttenuation * ld.NoL;
+    #endif
+    return color;
+}
+
+half3 shadeDirectSpecular(in pmLightData ld)
+{
+    if (ld.NoL <= 0) return 0;
+
+    PrepareEnergyCompensation(ld);
+    half3 color = ld.directSpecular;
+    #if defined(_PM_NDF_GGX)
+        color *= ld.energyCompensation;
+    #endif
+    color *= ld.mainLightColor * ld.mainLightAttenuation * ld.NoL;
+    return color;
+}
+
+half3 shadeVertex(in VertexLightingData vld, in pmLightData ld, in pmAnisotropyData ad, in pmInput i) {
     #if defined(PASS_BASE)
         if (i.useVertexLights) {
-            float3 vertLighting = 0;
+            half3 vertLighting = 0;
             for (int index = 0; index < 4; index++) {
                 if (vld.NoL[index] > 0) {
-                float3 vFl = 0;
-                float3 vFd = vertexDiffuseLobe(vld, ld, index);
-                float3 vFr = vertexSpecularLobe(vld, ld, ad, index);
+                half3 vFl = 0;
+                half3 vFd = vertexDiffuseLobe(vld, ld, index);
+                half3 vFr = vertexSpecularLobe(vld, ld, ad, index);
                 #ifdef _PM_NDF_CHARLIE
                     #ifdef _PM_FT_SUBSURFACE
                         vFd *= saturate(_Subsurface + vld.NoL[index]);
@@ -117,7 +119,8 @@ void shadeVertex(inout VertexLightingData vld, inout LightingData ld, inout Anis
                 vertLighting += vFl;
                 }
             }
-            ld.surfaceColor += vertLighting;
+            return vertLighting;
         }
+        return 0;
     #endif
 }

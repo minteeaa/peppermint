@@ -1,24 +1,24 @@
-float GetDither(inout v2f i)
+half GetDither(inout pmInput i)
 {
-    float2 screenP = i.screenPos.xy / i.screenPos.w;
-    float2 ditherCoordinate = screenP * _ScreenParams.xy * _ditherPattern_TexelSize.xy;
-    float tex = tex2D(_ditherPattern, ditherCoordinate).r;
+    half2 screenP = i.screenPos.xy / i.screenPos.w;
+    half2 ditherCoordinate = screenP * _ScreenParams.xy * _ditherPattern_TexelSize.xy;
+    half tex = TEX2D_SAMPLE_SAMPLER(_ditherPattern, sampler_ditherPattern, ditherCoordinate).r;
     return tex - _DitherBias;
 }
 
-float CutoutAlpha(float alpha) {
-    return alpha - _Cutoff;
+half CutoutAlpha(half alpha) {
+    return alpha - _AlphaCutoff;
 }
 
-float AlphaDither(inout v2f i, float alpha)
+half AlphaDither(inout pmInput i, half alpha)
 {
-    float dither = GetDither(i);
+    half dither = GetDither(i);
     return saturate(alpha - (dither * (1 - alpha) * _DitherAmount));
 }
 
-float AlphaBlend(inout v2f i, in float alpha, in float type)
+half AlphaBlend(inout pmInput i, in half alpha, in half type)
 {
-    float output = alpha;
+    half output = alpha;
     switch (type)
     {
         case 0: output = 1; break;
@@ -33,18 +33,18 @@ float AlphaBlend(inout v2f i, in float alpha, in float type)
     return output;
 }
 
-void ParseInputs(inout v2f i, in bool isFrontFace) 
+void sampleProperties(in pmInput i) 
 {
-    float3 sampledORM = TEX2D_SAMPLE_SAMPLER(_ORMTexture, sampler_samplerDefault, i.uv0).rgb;
-    float4 sampledBumpMap = TEX2D_SAMPLE_SAMPLER(_BumpMap, sampler_samplerDefault, i.uv0);
-    float4 sampledMainTex = TEX2D_SAMPLE_SAMPLER(_MainTex, sampler_samplerDefault, i.uv0);
+    half3 sampledORM = TEX2D_SAMPLE_SAMPLER(_ORMTexture, sampler_samplerDefault, i.uv0).rgb;
+    half4 sampledBumpMap = TEX2D_SAMPLE_SAMPLER(_BumpMap, sampler_samplerDefault, i.uv0);
+    half4 sampledMainTex = TEX2D_SAMPLE_SAMPLER(_MainTex, sampler_samplerDefault, i.uv0);
 
     _Occlusion = lerp(1, sampledORM.r, _AOStrength);
-    _RoughnessPerceptual = saturate(max(sampledORM.g, 0.001)) * _RoughnessStrength;
+    _RoughnessPerceptual = saturate(max(sampledORM.g, 0.001)) * max(_RoughnessStrength, 0.001);
     _Metallic = sampledORM.b * _MetallicStrength;
     _Normal = ReconstructNormal(sampledBumpMap, _NormalStrength);
 
-    float alpha = 1.0;
+    half alpha = 1.0;
     if (_pm_nk_hasalpha)
         alpha = TEX2D_SAMPLE_SAMPLER(_AlphaTex, sampler_samplerDefault, i.uv0).r;
     else

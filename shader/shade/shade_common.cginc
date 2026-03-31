@@ -1,36 +1,36 @@
 float diffuse(float NoL, float LoV, float NoV, float roughness, float3 diffuse) {
-    return Fd_Oren_Nayar(NoL, LoV, NoV, roughness, diffuse);
+    return pm_Fd_Oren_Nayar(NoL, LoV, NoV, roughness, diffuse);
 }
 
 float distribution(float NoH, float roughness) {
-    return D_GGX2(NoH, roughness);
+    return pm_D_GGX2(NoH, roughness);
 }
 
 float visibility(float NoV, float NoL, float roughness) {
-    return V_SmithGGXCorrelated(NoV, NoL, roughness);
+    return pm_V_SmithGGXCorrelated(NoV, NoL, roughness);
 }
 
-float3 fresnel(float LoH, float f0) {
-    return F_Schlick(LoH, f0);
+float3 fresnel(float LoH, float3 f0) {
+    return pm_F_Schlick(LoH, f0);
 }
 
 float distributionAnisotropic(float at, float ab, float ToH, float BoH, float NoH) {
-    return D_GGX_Anisotropic(at, ab, ToH, BoH, NoH);
+    return pm_D_GGX_Anisotropic(at, ab, ToH, BoH, NoH);
 }
 
 float visibilityAnisotropic(float at, float ab, float ToV, float BoV, float ToL, float BoL, float NoV, float NoL) {
-    return V_SmithGGXCorrelated_Anisotropic(at, ab, ToV, BoV, ToL, BoL, NoV, NoL);
+    return pm_V_SmithGGXCorrelated_Anisotropic(at, ab, ToV, BoV, ToL, BoL, NoV, NoL);
 }
 
 float distributionCloth(float NoH, float roughness) {
-    return D_Charlie(NoH, roughness);
+    return pm_D_Charlie(NoH, roughness);
 }
 
 float visibilityCloth(float NoV, float NoL) {
-    return V_Neubelt(NoV, NoL);
+    return pm_V_Neubelt(NoV, NoL);
 }
 
-float3 isotropic(float NoH, float NoV, float LoH, float NoL, float f0, float roughness) {
+float3 isotropic(float NoH, float NoV, float LoH, float NoL, float3 f0, float roughness) {
     float D = distribution(NoH, roughness);
     float V = visibility(NoV, NoL, roughness);
     float3 F = fresnel(LoH, f0);
@@ -46,7 +46,7 @@ float3 isotropic(float NoH, float NoV, float LoH, float NoL, float f0, float rou
     return Fr;
 }
 
-float3 anisotropic(float3 h, float3 viewDir, float3 lightDir, float3 t, float3 b, float NoV, float NoH, float NoL, float LoH, float f0, float roughness) {
+float3 anisotropic(float3 h, float3 viewDir, float3 lightDir, float3 t, float3 b, float NoV, float NoH, float NoL, float LoH, float3 f0, float roughness) {
     #ifdef _PM_FT_ANISOTROPICS
         float at = max(roughness * (1.0 + _AnisotropicsStrength), 0.04);
         float ab = max(roughness * (1.0 - _AnisotropicsStrength), 0.04);
@@ -60,14 +60,20 @@ float3 anisotropic(float3 h, float3 viewDir, float3 lightDir, float3 t, float3 b
 
         float D = distributionAnisotropic(at, ab, ToH, BoH, NoH);
         float V = visibilityAnisotropic(at, ab, ToV, BoV, ToL, BoL, NoV, NoL);
-        float F = fresnel(LoH, f0);
+        float3 F = fresnel(LoH, f0);
         return (D * V) * F;
     #endif
 }
 
-float isotropicCloth(float NoH, float NoV, float NoL, float roughness, float f0) {
+float3 isotropicCloth(float NoH, float NoV, float NoL, float roughness, float3 f0) {
     float D = distributionCloth(NoH, roughness);
     float V = visibilityCloth(NoV, NoL);
     float3 F = f0;
     return (D * V) * F;
+}
+
+half3 addEmission(in pmLightData ld)
+{
+    half3 emission = _EmissionColor * _Emission * _EmissionStrength;
+    return emission * _EmissionsEnable;
 }

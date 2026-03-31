@@ -1,54 +1,120 @@
-float3 indirectSpecular(LightingData ld, AnisotropyData ad) {
-    float4 dfg = PrepareDFG(ld);
-    float3 h = normalize(ld.r + ld.viewDir);
-    float LoH = saturate(dot(ld.r, h));
-
-    float3 F = fresnel(LoH, ld.f0);
-
-    float3 E;
-    float3 E_ggx = lerp(dfg.x, dfg.y, ld.f0);
-
-    #ifdef _PM_NDF_CHARLIE
-        float3 E_charlie = ld.f0 * dfg.z;
-        E = lerp(E_charlie, E_ggx, _Metallic);
-    #else 
-        E = E_ggx;
+float3 sampleAPV(in pmInput i, in pmLightData ld)
+{
+    #if defined(PIPE_URP)
+        float3 apvColor = 0;
+        APVSample apv = SampleAPV(i.worldPos, _NormalWS, 0xFFFFFFFF, i.viewDir);
+        EvaluateAdaptiveProbeVolume(apv, _NormalWS, apvColor);
+        return apvColor;
     #endif
-
-    float3 ind = ld.indirectSpecular * E;
-    return F * ind * ComputeSpecularAO(ld.NoV, _Occlusion, _Roughness);
 }
 
-float3 indirectDiffuse(LightingData ld, AnisotropyData ad) {
-    float3 Fd = float3(0, 0, 0);
-    float4 dfg = PrepareDFG(ld);
+half3 sampleIndirectDiffuse(in pmInput i, in pmLightData ld) 
+{
+    // half3 sh = ShadeSH9(half4(_NormalWS.x, _NormalWS.y, _NormalWS.z, 1));
+    // return (sh * _Albedo / PI) * _Occlusion;
+    half3 diffuseAdd = half3(0, 0, 0);
+    #if defined(PIPE_BIRP)
+        float3 L0 = float3(0, 0, 0);
+        float3 L1r = float3(0, 0, 0);
+        float3 L1g = float3(0, 0, 0);
+        float3 L1b = float3(0, 0, 0);
 
-    float3 E;
-    float3 E_ggx = lerp(dfg.x, dfg.y, ld.f0);
-
-    #ifdef _PM_NDF_CHARLIE
-        float3 E_charlie = ld.f0 * dfg.z;
-        E = lerp(E_charlie, E_ggx, _Metallic);
-    #else 
-        E = E_ggx;
+        LightVolumeSH(i.worldPos, L0, L1r, L1g, L1b);
+        diffuseAdd = EvaluateSH1(_NormalWS, L0, L1r, L1g, L1b);
+    #elif defined(PIPE_URP)
+        diffuseAdd = SampleSH(_NormalWS);
     #endif
 
-    Fd += _Diffuse * ld.indirectDiffuse * (1.0 - E) * (Fd_Lambert() * _Occlusion);
+    return diffuseAdd;
+}
+
+half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyData ad)
+{
+    half3 specularAdd = half3(0, 0, 0);
+    half3 r = ld.r;
+    #if defined(PIPE_BIRP)
+        half4 encoded = 0;
+        float3 L0 = float3(0, 0, 0);
+        float3 L1r = float3(0, 0, 0);
+        float3 L1g = float3(0, 0, 0);
+        float3 L1b = float3(0, 0, 0);
+
+        half mip = _RoughnessPerceptual * UNITY_SPECCUBE_LOD_STEPS;
+        #ifdef _PM_FT_ANISOTROPICS
+            r = lerp(ld.r, ad.r, _AnisotropicsStrength);
+        #endif
+        encoded = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, r, mip);
+
+        LightVolumeSH(i.worldPos, L0, L1r, L1g, L1b);
+
+        if (_UdonLightVolumeEnabled != 0) {
+            specularAdd = LightVolumeSpecular(_Albedo, 1.0 - _RoughnessPerceptual, _Metallic, _NormalWS, ld.viewDir, L0, L1r, L1g, L1b);
+        } else {
+            specularAdd = DecodeHDR(encoded, unity_SpecCube0_HDR);
+        }
+    #elif defined(PIPE_URP)
+        #ifdef _PM_FT_ANISOTROPICS
+            r = lerp(ld.r, ad.r, _AnisotropicsStrength);
+        #endif 
+        specularAdd = GlossyEnvironmentReflection(normalize(r), i.worldPos, _RoughnessPerceptual, 1, i.screenPosUV);
+    #endif
+
+    return specularAdd;
+}
+
+void prepareIndirect(in pmInput i, inout pmLightData ld, in pmAnisotropyData ad)
+{
+    #if defined(PROBE_VOLUMES_L1) || defined(PROBE_VOLUMES_L2)
+        ld.indirectDiffuse += sampleAPV(i, ld);
+    #else
+        ld.indirectDiffuse += sampleIndirectDiffuse(i, ld);
+    #endif
+    ld.indirectSpecular += sampleIndirectSpecular(i, ld, ad);
+}
+
+half3 shadeIndirectSpecular(in pmLightData ld) {
+    half4 dfg = PrepareDFG(ld);
+    half3 h = uSafeNormalize(ld.r + ld.viewDir);
+    half LoH = saturate(dot(ld.r, h));
+    half3 F = fresnel(LoH, ld.f0);
+    
+    half3 E = half3(0, 0, 0);
+    half3 EGGX = lerp(dfg.x, dfg.y, ld.f0);
+    #ifdef _PM_NDF_CHARLIE
+        half3 ECharlie = ld.f0 * dfg.z;
+        E = lerp(ECharlie, EGGX, _Metallic);
+    #else 
+        E = EGGX;
+    #endif
+
+    half3 Fr = ld.indirectSpecular;
+    return F * Fr * ComputeSpecularAO(ld.NoV, _Occlusion, _Roughness);
+}
+
+half3 shadeIndirectDiffuse(in pmLightData ld) {
+    half4 dfg = PrepareDFG(ld);
+
+    half3 E = half3(0, 0, 0);
+    half3 EGGX = lerp(dfg.x, dfg.y, ld.f0);
+    #ifdef _PM_NDF_CHARLIE
+        half3 ECharlie = ld.f0 * dfg.z;
+        E = lerp(ECharlie, EGGX, _Metallic);
+    #else 
+        E = EGGX;
+    #endif
+
+    half3 Fd = half3(0, 0, 0);
+    Fd += _Diffuse * ld.indirectDiffuse * (1.0 - E) * (pm_Fd_Lambert() * _Occlusion);
     return Fd *= EvalSubsurfaceIBL(Fd, ld);
 }
 
-void shadeIndirect(inout LightingData ld, AnisotropyData ad) {
-    float3 IFr = indirectSpecular(ld, ad);
-    float3 IFd = indirectDiffuse(ld, ad);
-
-    float3 color = IFr + IFd;
-
-    ld.surfaceColor += color;
-}
-
-void shadeLTCGI(inout v2f i, inout LightingData ld)
-{
-    GetLTCGI(i, ld);
-    ld.surfaceColor += ld.ltcgiDiffuse * _Diffuse;
-    ld.surfaceColor += ld.ltcgiSpecular * ld.f0;
-}
+#ifdef LTCGI_INCLUDED
+    void addLTCGI(in pmInput i, in pmLightData ld)
+    {
+        accumulator_struct acc = GetLTCGI(i, ld);
+        half3 color = 0;
+        color += acc.diffuse * _Diffuse;
+        color += acc.specular * ld.f0;
+        return color;
+    }
+#endif
