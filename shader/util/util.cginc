@@ -62,6 +62,25 @@ float3 TangentToWorld(in pmInput i, in float3 input)
     return worldNormal;
 }
 
+half3 sampleDFG(half NoV)
+{
+    float2 dfgUV = float2(NoV, _Roughness);
+    #ifdef _PM_NDF_CHARLIE
+        half4 dfgCloth = TEX2D_SAMPLE_SAMPLER(_dfg_cloth, sampler_dfg_cloth_bilinear_clamp, dfgUV);
+        half4 dfgGGX = TEX2D_SAMPLE_SAMPLER(_dfg, sampler_dfg_bilinear_clamp, dfgUV);
+        half4 dfgSample = lerp(dfgCloth, dfgGGX, _Metallic);
+    #else
+        half4 dfgSample = TEX2D_SAMPLE_SAMPLER(_dfg, sampler_dfg_bilinear_clamp, dfgUV);
+    #endif
+    return dfgSample;
+}
+
+half3 computeEnergyCompensation(half3 dfg, half3 f0)
+{
+    half3 energyCompensation = 1.0 + f0 * (1.0 / max(dfg.y, 0.005) - 1.0);
+    return energyCompensation;
+}
+
 half3 ReconstructNormal(in half4 i, in half scale)
 {
     /* 
@@ -126,7 +145,7 @@ float3 GetCameraPos() {
 
 // UnityCG.cginc
 void GetVertexLightData (
-    inout VertexLightingData vld, in float3 viewDir,
+    inout pmVertexLightData vld, in float3 viewDir,
     float4 lightPosX, float4 lightPosY, float4 lightPosZ,
     float3 lightColor0, float3 lightColor1, float3 lightColor2, float3 lightColor3,
     float4 lightAttenSq,
@@ -175,8 +194,9 @@ void GetVertexLightData (
     }
 }
 
-void prepareVertexLightData(inout pmInput i, in pmLightData ld, inout VertexLightingData vld) 
+pmVertexLightData prepareVertexLightData(inout pmInput i, in pmLightData ld) 
 {
+    pmVertexLightData vld = (pmVertexLightData)0;
     #if defined(PASS_BASE)
         if (i.useVertexLights) {
             GetVertexLightData(vld, ld.viewDir, 
@@ -187,6 +207,7 @@ void prepareVertexLightData(inout pmInput i, in pmLightData ld, inout VertexLigh
                 i, _NormalWS);
         }
     #endif
+    return vld;
 }
 
 pmAnisotropyData prepareAnisotropyData(in pmLightData ld, in pmInput i)
@@ -214,7 +235,7 @@ pmLightData prepareLightData(in pmInput i)
     float3 lightDir = 0;
     float3 viewDir = 0;
 
-    #if defined(PIPE_BRIP)
+    #if defined(PIPE_BIRP)
         lightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
         viewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
     #elif defined(PIPE_URP)
@@ -238,6 +259,8 @@ pmLightData prepareLightData(in pmInput i)
     ld.illuminance = ld.mainLightColor * ld.NoL;
     ld.horizon = min(dot(ld.r, _NormalWS) + 1, 1);
     ld.f0 = computeF0(_Albedo, _Metallic, REFL_DI);
+    ld.dfg = sampleDFG(ld.NoV);
+    ld.energyCompensation = computeEnergyCompensation(ld.dfg, ld.f0);
 
     return ld;
 }

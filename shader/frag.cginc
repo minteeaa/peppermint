@@ -11,7 +11,7 @@
 
         pmLightData ld = prepareLightData(input);
         pmAnisotropyData ad = prepareAnisotropyData(ld, input);
-        VertexLightingData vld = (VertexLightingData)0;
+        pmVertexLightData vld = prepareVertexLightData(input, ld);
         
         prepareIndirect(input, ld, ad);
         prepareDirect(ld, ad);
@@ -20,15 +20,18 @@
         color += shadeDirectSpecular(ld);
         color += shadeIndirectSpecular(ld);
         color += shadeIndirectDiffuse(ld);
+        color += shadeVertexDiffuse(vld, ld, input);
+        color += shadeVertexSpecular(vld, ld, ad, input);
             
-        #if defined(LTCGI_INCLUDED)
-            shadeLTCGI(input, ld);
-        #endif
-        #if defined(_PM_FT_EMISSIONS)
-            addEmission(ld);
+        #if defined(_PM_FT_LTCGI)
+            color += addLTCGI(input, ld);
         #endif
 
-        float4 col = half4(color, _Alpha);
+        #if defined(_PM_FT_EMISSIONS)
+            color += addEmission(ld);
+        #endif
+
+        half4 col = half4(color, _Alpha);
         col.r += samplerDefault.r;
 
         //UNITY_APPLY_FOG(i.fogCoord, col);

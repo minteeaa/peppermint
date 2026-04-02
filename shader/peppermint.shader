@@ -2,10 +2,10 @@ Shader "mintea/peppermint"
 {
 	Properties
 	{
-        [SingleLineTexture] _dfg("GGX DFG", 2D) = "white" {}
-        [SingleLineTexture] _dfg_cloth("Cloth DFG", 2D) = "white" {}
-        [HideInInspector] [SingleLineTexture] _samplerDefault("", 2D) = "white" {}
-        [SingleLineTexture] _ditherPattern("Dither", 2D) = "white" {}
+        [HideInInspector] _dfg("GGX DFG", 2D) = "white" {}
+        [HideInInspector] [SingleLineTexture] _dfg_cloth("Cloth DFG", 2D) = "white" {}
+        [HideInInspector] _samplerDefault("", 2D) = "white" {}
+        [HideInInspector] _ditherPattern("Dither", 2D) = "white" {}
         [HideInInspector] _pm_nk_hasalpha("_hasalpha", Range(0, 1)) = 0
 
 		[SingleLineTexture] _ORMTexture("Main/Textures/ORM", 2D) = "white" {}
@@ -15,7 +15,7 @@ Shader "mintea/peppermint"
         [SingleLineTexture] _AlphaTex("Main/Textures/Alpha", 2D) = "white" {}
 
         [Enum(Opaque, 0, Cutout, 1, Transparent, 2)] _AlphaMode ("Main/Alpha/Mode", Float) = 0
-        _AlphaCutoff("Main/Alpha/Cutoff", Range(0, 1)) = 0.5
+        _Cutoff("Main/Alpha/Cutoff", Range(0, 1)) = 0.5
         [Toggle] _EnableAlphaDither("Main/Alpha/Dither", Float) = 0
         _DitherAmount("Main/Alpha/Dither Amount", Range(0, 1)) = 0.5
         _DitherBias("Main/Alpha/Dither Bias", Range(0, 1)) = 0.5
@@ -100,6 +100,7 @@ Shader "mintea/peppermint"
     CustomEditor "peppermint_ui" 
     SubShader
     {
+        PackageRequirements { "com.unity.render-pipelines.universal" }
         Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" }
 
         Pass
@@ -145,7 +146,7 @@ Shader "mintea/peppermint"
         Pass
         {
             Name "FORWARD"
-            Tags { "LightMode" = "ForwardBase" }
+            Tags {"LightMode" = "ForwardBase"}
             ZWrite [_ZWrite]
             ZClip [_ZClip]
 
@@ -162,6 +163,7 @@ Shader "mintea/peppermint"
             #pragma multi_compile_fwdbase
 			#pragma multi_compile_instancing
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
+            #pragma shader_feature_local _PM_FT_LTCGI
             #pragma shader_feature_local _PM_FT_EMISSIONS
             #pragma shader_feature_local _PM_FT_SUBSURFACE
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
@@ -177,7 +179,7 @@ Shader "mintea/peppermint"
         Pass
         {
             Name "ADD"
-            Tags { "LightMode" = "ForwardAdd" }
+            Tags {"LightMode" = "ForwardAdd"}
             ZWrite Off
             ZClip [_ZClip]
             Fog {Color (0,0,0,0)}
@@ -195,6 +197,7 @@ Shader "mintea/peppermint"
             //#pragma multi_compile_fog
 			#pragma multi_compile_fwdadd_fullshadows
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
+            #pragma shader_feature_local _PM_FT_LTCGI
             #pragma shader_feature_local _PM_FT_EMISSIONS
             #pragma shader_feature_local _PM_FT_SUBSURFACE
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
@@ -210,7 +213,7 @@ Shader "mintea/peppermint"
         Pass
         {
             Name "SHADOWCASTER"
-            Tags { "LightMode" = "ShadowCaster" }
+            Tags {"LightMode" = "ShadowCaster"}
             ZWrite [_ZWrite]
 
             Cull [_Cull]

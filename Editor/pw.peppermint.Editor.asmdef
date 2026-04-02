@@ -1,5 +1,6 @@
 {
-    "name": "peppermint.ui",
+    "name": "pw.peppermint.Editor",
+    "rootNamespace": "",
     "references": [],
     "includePlatforms": [
         "Editor"

@@ -37,7 +37,7 @@ float pm_D_GGX_Anisotropic(float at, float ab, float ToH, float BoH, float NoH) 
     float a2 = at * ab;
     float3 d = float3(ab * ToH, at * BoH, a2 * NoH);
     float d2 = dot(d, d);
-    float b2 = a2 / d2;
+    float b2 = PREVENT_DIV0(a2, d2, 0.0000009);
     return a2 * b2 * b2 * (1.0 / PI);
 }
 
@@ -106,32 +106,14 @@ float pm_Fd_Oren_Nayar(in float NoL, in float LoV, in float NoV, in float Rough,
     // https://mimosa-pudica.net/improved-oren-nayar.html
     // conversion of Albedo to approximated luminance via Rec709 https://en.wikipedia.org/wiki/Rec._709
     
-    float AEy = dot(Albedo, float3(0.2126, 0.7152, 0.0722));
+    float lumApprox = dot(Albedo, float3(0.2126, 0.7152, 0.0722));
     float s = LoV - NoL * NoV;
     float t = lerp(1.0, max(NoL, NoV), step(0.0, s));
 
-    float A2 = (1.0 / PI) * (1.0 - 0.5 * (Rough / (Rough + 0.33)) + 0.17 * AEy * (Rough / (Rough + 0.13)));
+    float A2 = (1.0 / PI) * (1.0 - 0.5 * (Rough / (Rough + 0.33)) + 0.17 * lumApprox * (Rough / (Rough + 0.13)));
     float B2 = (1.0 / PI) * (0.45 * (Rough / (Rough + 0.09)));
 
     return NoL * (A2 + B2 * s / t);
-}
-
-float4 PrepareDFG(in pmLightData ld)
-{
-    float2 dfgUV = float2(ld.NoV, _Roughness);
-    #ifdef _PM_NDF_CHARLIE
-        float4 dfgSample = TEX2D_SAMPLE_SAMPLER(_dfg_cloth, sampler_dfg_cloth_bilinear_clamp, dfgUV);
-    #else
-        float4 dfgSample = TEX2D_SAMPLE_SAMPLER(_dfg, sampler_dfg_bilinear_clamp, dfgUV);
-    #endif
-    return dfgSample;
-}
-
-void PrepareEnergyCompensation(inout pmLightData ld)
-{
-    float4 dfgSample = PrepareDFG(ld);
-    half3 energyCompensation = 1.0 + ld.f0 * (1.0 / max(dfgSample.y, 0.005) - 1.0);
-    ld.energyCompensation = energyCompensation;
 }
 
 float ComputeSpecularAO(in float NoV, in float ao, in float roughness)

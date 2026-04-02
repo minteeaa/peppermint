@@ -119,7 +119,7 @@ public class peppermint_ui : ShaderGUI
         var root = new Folder{ name = "Root", path = "" };
         foreach (var prop in props)
         {
-            if (prop.propertyFlags != UnityEngine.Rendering.ShaderPropertyFlags.HideInInspector)
+            if (prop.flags != MaterialProperty.PropFlags.HideInInspector)
             {
                 string[] pathSplit = prop.displayName.Split('/');
                 Folder current = root;

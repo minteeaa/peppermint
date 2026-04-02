@@ -46,7 +46,7 @@ float4 _DiffuseHDR;
 float4 _AlphaTex_ST;
 float4 _AlphaTex_TexelSize;
 float _AlphaMode;
-float _AlphaCutoff;
+half _Cutoff;
 float _EnableAlphaDither;
 float _DitherAmount;
 float _DitherBias;
@@ -134,6 +134,7 @@ struct pmLightData
     float3 h;
     float3 r;
     half3 f0;
+    half3 dfg;
     half NoV;
     half NoL;
     half NoH;
@@ -149,18 +150,23 @@ struct pmLightData
 
 // todo: update vertexlighting for birp
 
-struct VertexLightingData
+struct pmVertexLightData
 {
     float3 color[4];
-    float NoL[4];
+    half4 attenuation;
+    half4 attNoL;
+    half3 energyCompensation;
+
     float3 lightPos[4];
     float3 lightDir[4];
     float3 h[4];
+    half3 dfg;
+    float NoL[4];
     float LoH[4];
     float NoH[4];
-    float4 attenuation;
-    float4 attNoL;
-    float3 energyCompensation;
+    
+    half3 diffuse;
+    half3 specular;
 };
 
 #if defined(PIPE_BIRP)
@@ -226,7 +232,7 @@ struct VertexLightingData
 #endif
 
 #include "./third_party/VRCLightVolumes/LightVolumes.cginc"
-#if defined(LTCGI_INCLUDED)
+#if defined(_PM_FT_LTCGI)
     #include "./third_party/LTCGI.cginc"
 #endif
 #include "./util/util.cginc"

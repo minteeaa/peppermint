@@ -7,7 +7,7 @@ half GetDither(inout pmInput i)
 }
 
 half CutoutAlpha(half alpha) {
-    return alpha - _AlphaCutoff;
+    return alpha - _Cutoff;
 }
 
 half AlphaDither(inout pmInput i, half alpha)

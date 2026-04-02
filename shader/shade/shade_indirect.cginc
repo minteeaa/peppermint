@@ -73,48 +73,45 @@ void prepareIndirect(in pmInput i, inout pmLightData ld, in pmAnisotropyData ad)
 }
 
 half3 shadeIndirectSpecular(in pmLightData ld) {
-    half4 dfg = PrepareDFG(ld);
     half3 h = uSafeNormalize(ld.r + ld.viewDir);
     half LoH = saturate(dot(ld.r, h));
     half3 F = fresnel(LoH, ld.f0);
     
     half3 E = half3(0, 0, 0);
-    half3 EGGX = lerp(dfg.x, dfg.y, ld.f0);
+    half3 EGGX = lerp(ld.dfg.x, ld.dfg.y, ld.f0);
     #ifdef _PM_NDF_CHARLIE
-        half3 ECharlie = ld.f0 * dfg.z;
+        half3 ECharlie = ld.f0 * ld.dfg.z;
         E = lerp(ECharlie, EGGX, _Metallic);
     #else 
         E = EGGX;
     #endif
 
-    half3 Fr = ld.indirectSpecular;
+    half3 Fr = ld.indirectSpecular * E;
     return F * Fr * ComputeSpecularAO(ld.NoV, _Occlusion, _Roughness);
 }
 
 half3 shadeIndirectDiffuse(in pmLightData ld) {
-    half4 dfg = PrepareDFG(ld);
-
     half3 E = half3(0, 0, 0);
-    half3 EGGX = lerp(dfg.x, dfg.y, ld.f0);
+    half3 EGGX = lerp(ld.dfg.x, ld.dfg.y, ld.f0);
     #ifdef _PM_NDF_CHARLIE
-        half3 ECharlie = ld.f0 * dfg.z;
+        half3 ECharlie = ld.f0 * ld.dfg.z;
         E = lerp(ECharlie, EGGX, _Metallic);
     #else 
         E = EGGX;
     #endif
 
-    half3 Fd = half3(0, 0, 0);
+    half3 Fd = 0;
     Fd += _Diffuse * ld.indirectDiffuse * (1.0 - E) * (pm_Fd_Lambert() * _Occlusion);
     return Fd *= EvalSubsurfaceIBL(Fd, ld);
 }
 
-#ifdef LTCGI_INCLUDED
-    void addLTCGI(in pmInput i, in pmLightData ld)
-    {
+half3 addLTCGI(in pmInput i, in pmLightData ld)
+{
+    #ifdef _PM_FT_LTCGI
         accumulator_struct acc = GetLTCGI(i, ld);
         half3 color = 0;
         color += acc.diffuse * _Diffuse;
         color += acc.specular * ld.f0;
         return color;
-    }
-#endif
+    #endif
+}
