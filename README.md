@@ -1,11 +1,14 @@
 ### peppermint
-straightforward Filament-based PBR shader targeting VRChat avatar usage, implementing an ORM workflow.
+straightforward Filament-based PBR shader targeting Unity's BIRP and URP pipelines, intended for VRChat/BasisVR avatar usage.
 
 ### "features"
-* [Filament](https://google.github.io/filament/Filament.md.html) based, with changes and features specific to VRChat without sacrificing the PBR look
+* [Filament](https://google.github.io/filament/Filament.md.html) based
 * uses ORM (Occlusion, Roughness, Metallic)
-* [Light Volumes](https://github.com/REDSIM/VRCLightVolumes/tree/main) support 
-* [LTCGI](https://ltcgi.dev/) support
+* *birp:* [Light Volumes](https://github.com/REDSIM/VRCLightVolumes/tree/main) support 
+* *birp:* [LTCGI](https://ltcgi.dev/) support
+* *urp:* [APV](https://docs.unity3d.com/6000.0/Documentation/Manual/urp/probevolumes.html) support
 
-### note
-this isn't aimed to be a 'feature-packed' shader. there are some extras, like emissions, that are added out of popularity and what i find useful. first and foremost, this is a shader i made for personal usage because i like the look of PBR.
+### notes
+features are sparse, this is meant to be a personal usage shader first and foremost; feel free to open issues/prs with reasonable intent.
+
+this shader is meant for "client" usage, a.k.a. dynamic player objects/avatars; it does sample from light probes and additional dynamic-lighting systems (refer "features"), but it does not sample baked world lightmaps and should not be used for world projects.
