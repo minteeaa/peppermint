@@ -60,7 +60,7 @@ void sampleProperties(in pmInput i)
     
     _Albedo = (sampledMainTex.rgb * _DiffuseHDR.rgb) * _DiffuseHDR.a;
     _Roughness = _RoughnessPerceptual * _RoughnessPerceptual;
-    _NormalWS = TangentToWorld(i, _Normal);
+    _NormalWS = tangentToWorld(i, _Normal);
     _Diffuse = _Albedo * (1.0 - _Metallic);
     _Alpha = AlphaBlend(i, alpha, _AlphaMode) * _DiffuseHDR.a;
 }

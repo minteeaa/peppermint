@@ -23,6 +23,6 @@ void callback_specular(inout accumulator_struct acc, in ltcgi_output output) {
 
 accumulator_struct GetLTCGI(in pmInput i, in pmLightData ld){
     accumulator_struct acc = (accumulator_struct)0;
-    LTCGI_Contribution(acc, i.worldPos, _NormalWS, ld.viewDir, _Roughness, i.uv1);
+    LTCGI_Contribution(acc, i.worldPos, _NormalWS, ld.viewDir, _RoughnessPerceptual, i.uv1);
     return acc;
 }

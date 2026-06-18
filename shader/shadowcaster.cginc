@@ -1,7 +1,7 @@
 #if defined(PIPE_BIRP)
     float4 frag (v2f i, bool isFrontFace : SV_IsFrontFace) : SV_Target
     {
-        InitializeDefaultSampler(samplerDefault);
+        initDefaultSampler(samplerDefault);
         pmInput input = inputAdapt(i);
         prepareSurface(input, isFrontFace);
         sampleProperties(input);

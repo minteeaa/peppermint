@@ -9,7 +9,7 @@ inline half3 uSafeNormalize(half3 inVec)
     return inVec * rsqrt(dp3);
 }
 
-void InitializeDefaultSampler(out float4 defaultSampler) 
+void initDefaultSampler(out float4 defaultSampler)
 {
     defaultSampler = TEX2D_SAMPLE_SAMPLER(_samplerDefault, sampler_samplerDefault, 0) * EPSILON;
 }
@@ -49,7 +49,7 @@ void prepareSurface(inout pmInput i, in bool isFrontFace)
         flipNormals(i, isFrontFace);
 }
 
-float3 TangentToWorld(in pmInput i, in float3 input)
+float3 tangentToWorld(in pmInput i, in float3 input)
 {
     // this function assumes vertex normals and tangents are provided *in worldspace already*
     // which they should be, from the vertex shader; this is at its core a mini, inline TBN
@@ -72,7 +72,7 @@ half3 sampleDFG(half NoV)
     #else
         half4 dfgSample = TEX2D_SAMPLE_SAMPLER(_dfg, sampler_dfg_bilinear_clamp, dfgUV);
     #endif
-    return dfgSample;
+    return dfgSample.rgb;
 }
 
 half3 computeEnergyCompensation(half3 dfg, half3 f0)
@@ -216,7 +216,7 @@ pmAnisotropyData prepareAnisotropyData(in pmLightData ld, in pmInput i)
 
     float3 direction = float3(1, 0, 0);
     ad.strength = _AnisotropicsStrength;
-    ad.t = TangentToWorld(i, direction);
+    ad.t = tangentToWorld(i, direction);
     ad.b = normalize(cross(i.normal, ad.t));
     float3 anisotropyDirection = lerp(ad.t, ad.b, ad.strength);
     float3 anisotropicTangent = cross(anisotropyDirection, ld.viewDir);
