@@ -1,7 +1,7 @@
 <div align=center class=flex>
     <img height="125" alt="peppermint logo" src="https://mintea.pw/img/peppermint.svg"></img>
     <h3>peppermint</h3>
-    straightforward Filament-based PBR shader targeting Unity's BIRP and URP pipelines, intended for VRChat/BasisVR avatar usage.
+    <p>straightforward Filament-based PBR shader targeting Unity's BIRP and URP pipelines, intended for VRChat/BasisVR avatar usage.</p>
 </div>
 
 ---
