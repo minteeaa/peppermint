@@ -33,7 +33,7 @@ half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyDat
     half3 specularAdd = half3(0, 0, 0);
     half3 r = ld.r;
     #if defined(PIPE_BIRP)
-        half4 encoded = 0;
+        half4 envReflection = 0;
         float3 L0 = float3(0, 0, 0);
         float3 L1r = float3(0, 0, 0);
         float3 L1g = float3(0, 0, 0);
@@ -43,15 +43,12 @@ half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyDat
         #ifdef _PM_FT_ANISOTROPICS
             r = lerp(ld.r, ad.r, _AnisotropicsStrength);
         #endif
-        encoded = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, r, mip);
+        envReflection = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, r, mip);
+        specularAdd += DecodeHDR(envReflection, unity_SpecCube0_HDR);
 
         LightVolumeSH(i.worldPos, L0, L1r, L1g, L1b);
+        specularAdd += LightVolumeSpecular(_Albedo, 1.0 - _RoughnessPerceptual, _Metallic, _NormalWS, ld.viewDir, L0, L1r, L1g, L1b);
 
-        if (_UdonLightVolumeEnabled != 0) {
-            specularAdd = LightVolumeSpecular(_Albedo, 1.0 - _RoughnessPerceptual, _Metallic, _NormalWS, ld.viewDir, L0, L1r, L1g, L1b);
-        } else {
-            specularAdd = DecodeHDR(encoded, unity_SpecCube0_HDR);
-        }
     #elif defined(PIPE_URP)
         #ifdef _PM_FT_ANISOTROPICS
             r = lerp(ld.r, ad.r, _AnisotropicsStrength);
