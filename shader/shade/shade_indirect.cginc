@@ -19,7 +19,8 @@ half3 sampleIndirectDiffuse(in pmInput i, in pmLightData ld)
         float3 L1g = float3(0, 0, 0);
         float3 L1b = float3(0, 0, 0);
 
-        LightVolumeSH(i.worldPos, L0, L1r, L1g, L1b);
+        // don't use LightVolumeSHSpecular because we don't need specular here
+        LightVolumeSH(i.worldPos, L0, L1r, L1g, L1b, 0, _NormalWS, 3);
         diffuseAdd = EvaluateSH1(_NormalWS, L0, L1r, L1g, L1b);
     #elif defined(PIPE_URP)
         diffuseAdd = SampleSH(_NormalWS);
@@ -33,7 +34,8 @@ half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyDat
     half3 specularAdd = half3(0, 0, 0);
     half3 r = ld.r;
     #if defined(PIPE_BIRP)
-        half4 encoded = 0;
+        half4 envReflection = 0;
+        float3 lvSpecular = float3(0, 0, 0);
         float3 L0 = float3(0, 0, 0);
         float3 L1r = float3(0, 0, 0);
         float3 L1g = float3(0, 0, 0);
@@ -43,15 +45,11 @@ half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyDat
         #ifdef _PM_FT_ANISOTROPICS
             r = lerp(ld.r, ad.r, _AnisotropicsStrength);
         #endif
-        encoded = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, r, mip);
-
-        LightVolumeSH(i.worldPos, L0, L1r, L1g, L1b);
-
-        if (_UdonLightVolumeEnabled != 0) {
-            specularAdd = LightVolumeSpecular(_Albedo, 1.0 - _RoughnessPerceptual, _Metallic, _NormalWS, ld.viewDir, L0, L1r, L1g, L1b);
-        } else {
-            specularAdd = DecodeHDR(encoded, unity_SpecCube0_HDR);
-        }
+        envReflection = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, r, mip);
+        specularAdd += DecodeHDR(envReflection, unity_SpecCube0_HDR);
+        
+        LightVolumeSHSpecular(i.worldPos, L0, L1r, L1g, L1b, lvSpecular, ld.f0, 1 - _RoughnessPerceptual, _NormalWS, ld.viewDir, 0, 3);
+        specularAdd += lvSpecular;
     #elif defined(PIPE_URP)
         #ifdef _PM_FT_ANISOTROPICS
             r = lerp(ld.r, ad.r, _AnisotropicsStrength);
