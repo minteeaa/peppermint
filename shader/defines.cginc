@@ -233,7 +233,7 @@ struct pmVertexLightData
 
 #include "./third_party/VRCLightVolumes/LightVolumes.cginc"
 #if defined(_PM_FT_LTCGI)
-    #include "./third_party/LTCGI.cginc"
+    #include "./third_party/LTCGI/LTCGI.cginc"
 #endif
 #include "./util/util.cginc"
 #include "input.cginc"
