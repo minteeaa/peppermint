@@ -34,7 +34,7 @@
         half4 col = half4(color, _Alpha);
         col.r += samplerDefault.r;
 
-        //UNITY_APPLY_FOG(i.fogCoord, col);
+        UNITY_APPLY_FOG(i.fogCoord, col);
         return col;
     }
 #elif defined(PIPE_URP)

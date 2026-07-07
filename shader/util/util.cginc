@@ -221,7 +221,7 @@ pmAnisotropyData prepareAnisotropyData(in pmLightData ld, in pmInput i)
     float3 anisotropyDirection = lerp(ad.t, ad.b, ad.strength);
     float3 anisotropicTangent = cross(anisotropyDirection, ld.viewDir);
     float3 anisotropicNormal = cross(anisotropicTangent, anisotropyDirection);
-    float bendFactor = abs(ad.strength) * saturate(5.0 * _RoughnessPerceptual);
+    float bendFactor = abs(ad.strength) * saturate(5.0 * _Roughness);
     float3 bentNormal = normalize(lerp(_NormalWS, anisotropicNormal, bendFactor));
     ad.r = reflect(-ld.viewDir, bentNormal);
 
