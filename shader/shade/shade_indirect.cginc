@@ -41,20 +41,20 @@ half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyDat
         float3 L1g = float3(0, 0, 0);
         float3 L1b = float3(0, 0, 0);
 
-        half mip = _RoughnessPerceptual * UNITY_SPECCUBE_LOD_STEPS;
+        half mip = _Roughness * UNITY_SPECCUBE_LOD_STEPS;
         #ifdef _PM_FT_ANISOTROPICS
             r = lerp(ld.r, ad.r, _AnisotropicsStrength);
         #endif
         envReflection = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, r, mip);
         specularAdd += DecodeHDR(envReflection, unity_SpecCube0_HDR);
         
-        LightVolumeSHSpecular(i.worldPos, L0, L1r, L1g, L1b, lvSpecular, ld.f0, 1 - _RoughnessPerceptual, _NormalWS, ld.viewDir, 0, 3);
+        LightVolumeSHSpecular(i.worldPos, L0, L1r, L1g, L1b, lvSpecular, ld.f0, 1 - _Roughness, _NormalWS, ld.viewDir, 0, 3);
         specularAdd += lvSpecular;
     #elif defined(PIPE_URP)
         #ifdef _PM_FT_ANISOTROPICS
             r = lerp(ld.r, ad.r, _AnisotropicsStrength);
         #endif 
-        specularAdd = GlossyEnvironmentReflection(normalize(r), i.worldPos, _RoughnessPerceptual, 1, i.screenPosUV);
+        specularAdd = GlossyEnvironmentReflection(normalize(r), i.worldPos, _Roughness, 1, i.screenPosUV);
     #endif
 
     return specularAdd;

@@ -38,9 +38,9 @@ void sampleProperties(in pmInput i)
     half3 sampledORM = TEX2D_SAMPLE_SAMPLER(_ORMTexture, sampler_samplerDefault, i.uv0).rgb;
     half4 sampledBumpMap = TEX2D_SAMPLE_SAMPLER(_BumpMap, sampler_samplerDefault, i.uv0);
     half4 sampledMainTex = TEX2D_SAMPLE_SAMPLER(_MainTex, sampler_samplerDefault, i.uv0);
+    half perceptualRoughness = saturate(max(sampledORM.g, 0.001)) * max(_RoughnessStrength, 0.001);
 
     _Occlusion = lerp(1, sampledORM.r, _AOStrength);
-    _RoughnessPerceptual = saturate(max(sampledORM.g, 0.001)) * max(_RoughnessStrength, 0.001);
     _Metallic = sampledORM.b * _MetallicStrength;
     _Normal = ReconstructNormal(sampledBumpMap, _NormalStrength);
 
@@ -59,7 +59,7 @@ void sampleProperties(in pmInput i)
     #endif
     
     _Albedo = (sampledMainTex.rgb * _DiffuseHDR.rgb) * _DiffuseHDR.a;
-    _Roughness = _RoughnessPerceptual * _RoughnessPerceptual;
+    _Roughness = perceptualRoughness * perceptualRoughness;
     _NormalWS = tangentToWorld(i, _Normal);
     _Diffuse = _Albedo * (1.0 - _Metallic);
     _Alpha = AlphaBlend(i, alpha, _AlphaMode) * _DiffuseHDR.a;
