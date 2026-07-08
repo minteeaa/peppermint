@@ -23,7 +23,7 @@ float3 _Diffuse;
 float3 _Albedo;
 float _Alpha;
 float _Roughness;
-float _RoughnessPerceptual;
+float _perceptualRoughness;
 float _Occlusion;
 float _Metallic;
 float3 _Normal;

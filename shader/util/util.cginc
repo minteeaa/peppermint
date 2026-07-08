@@ -64,7 +64,10 @@ float3 tangentToWorld(in pmInput i, in float3 input)
 
 half3 sampleDFG(half NoV)
 {
-    float2 dfgUV = float2(NoV, _Roughness);
+    // Filament spec, 5.3.4.6; same concept as 5.3.4.4: use perceptualRoughness
+    // for DFG sampling as well as IBL
+    
+    float2 dfgUV = float2(NoV, _perceptualRoughness);
     #ifdef _PM_NDF_CHARLIE
         half4 dfgCloth = TEX2D_SAMPLE_SAMPLER(_dfg_cloth, sampler_dfg_cloth_bilinear_clamp, dfgUV);
         half4 dfgGGX = TEX2D_SAMPLE_SAMPLER(_dfg, sampler_dfg_bilinear_clamp, dfgUV);
