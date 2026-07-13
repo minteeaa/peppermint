@@ -28,6 +28,7 @@ half AlphaBlend(inout pmInput i, in half alpha, in half type)
             output = 1;
             break;
         case 2: output = alpha; break;
+        case 3: output = alpha; break;
         default: output = 0; break;
     }
     return output;

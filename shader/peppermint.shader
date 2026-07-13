@@ -14,7 +14,7 @@ Shader "mintea/peppermint"
         [SingleLineTexture] _MainTex("Main/Textures/Diffuse", 2D) = "white" {}
         [SingleLineTexture] _AlphaTex("Main/Textures/Alpha", 2D) = "white" {}
 
-        [Enum(Opaque, 0, Cutout, 1, Transparent, 2)] _AlphaMode ("Main/Alpha/Mode", Float) = 0
+        [Enum(Opaque, 0, Cutout, 1, TransClip, 2, Transparent, 3)] _AlphaMode ("Main/Alpha/Mode", Float) = 0
         _Cutoff("Main/Alpha/Cutoff", Range(0, 1)) = 0.5
         [Toggle] _EnableAlphaDither("Main/Alpha/Dither", Float) = 0
         _DitherAmount("Main/Alpha/Dither Amount", Range(0, 1)) = 0.5
@@ -97,7 +97,7 @@ Shader "mintea/peppermint"
 		[Enum(UnityEngine.Rendering.StencilOp)] _StencilZFailOp ("Rendering/Stencil/Stencil ZFail Op", Float) = 0
 		[Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompareFunction ("Rendering/Stencil/Stencil Compare Function", Float) = 8
 	}
-    CustomEditor "peppermint_ui" 
+    CustomEditor "Peppermint.Frontend" 
     SubShader
     {
         PackageRequirements { "com.unity.render-pipelines.universal" }
