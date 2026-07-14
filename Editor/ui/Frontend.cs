@@ -309,28 +309,33 @@ namespace Peppermint {
         public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
         {
             Material material = materialEditor.target as Material;
-
             MarkAttributes(materialEditor, properties);
 
             if (!foldoutStates.ContainsKey(material))
                 foldoutStates[material] = new Dictionary<string, bool>();
+
+            float alphaPrev = material.GetFloat("_AlphaMode");
             EditorGUI.BeginChangeCheck();
 
             Folder root = BuildFolderTree(properties);
-
             EditorGUI.indentLevel = 0;
             DrawFolder(materialEditor, material, root, 0);
 
+            using (new GUILayout.HorizontalScope())
+                material.renderQueue = EditorGUILayout.IntField("Render Queue", material.renderQueue);
+
             if (EditorGUI.EndChangeCheck()) {
                 foreach (Material mat in materialEditor.targets) {
-                    UpdateInternal(material, properties);
-                    UpdateKeywords(materialEditor, properties, material);
-                    TransparencyMode.Update(material);
+                    UpdateInternal(mat, properties);
+                    UpdateKeywords(materialEditor, properties, mat);
+
+                    float alphaCurrent = mat.GetFloat("_AlphaMode");
+                    if (alphaPrev != alphaCurrent) {
+                        TransparencyMode.Update(mat);
+                    }
+
+                    mat.renderQueue = material.renderQueue;
                 }
-            }
-            using (new GUILayout.HorizontalScope())
-            {
-                material.renderQueue = EditorGUILayout.IntField("Render Queue", material.renderQueue);
             }
         }
     }
