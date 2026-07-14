@@ -11,7 +11,6 @@ using System.Reflection;
 using System.Text;
 using Peppermint.Util.Shader;
 using Peppermint.Util;
-using Peppermint.Struct;
 
 namespace Peppermint {
     public class Frontend : ShaderGUI

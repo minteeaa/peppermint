@@ -2,7 +2,6 @@ using UnityEditor;
 using UnityEngine;
 using System.IO;
 using Peppermint.Util;
-using Peppermint.Struct;
 using System.Collections.Generic;
 
 namespace Peppermint.Util.Shader {
