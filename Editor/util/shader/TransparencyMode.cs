@@ -1,43 +1,13 @@
 using UnityEditor;
 using UnityEngine;
 using System.IO;
-using Peppermint.Meta;
 using Peppermint.Util;
 using Peppermint.Struct;
 using System.Collections.Generic;
 
 namespace Peppermint.Util.Shader {
     class TransparencyMode {
-        public static bool IsChanged(Material mat) {
-            string guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(mat));
-            string target = Path.Combine(Path.GetDirectoryName(Application.dataPath), PATH.PERSIST_DATA + "/" + PATH.MATERIAL_META_FILE);
-            MaterialStates state = new();
-
-            if (pmFile.doesShaderMetaExist()) {
-                state = state.Deserialize(pmFile.ReadJSON<MaterialMetaSerializable>(target));
-            }
-
-            float currentMode = mat.GetFloat("_AlphaMode");
-
-            if (!state.HasFloatProp(guid, "_AlphaMode")) {
-                state.SetFloatProp(guid, "_AlphaMode", currentMode);
-            }
-
-            float metaMode = state.GetFloatProp(guid, "_AlphaMode");
-
-            pmFile.WriteJSON<MaterialMetaSerializable>(target, state.Serialize());
-
-            if (metaMode != currentMode) {
-                return true;
-            }
-            return false;
-        }
-
         public static void Update(Material mat) {
-            string guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(mat));
-            string target = Path.Combine(Path.GetDirectoryName(Application.dataPath), PATH.PERSIST_DATA + "/" + PATH.MATERIAL_META_FILE);
-
-            MaterialStates state = new MaterialStates().Deserialize(pmFile.ReadJSON<MaterialMetaSerializable>(target));
             float mode = mat.GetFloat("_AlphaMode");
 
             if (mode == 0) {
@@ -128,8 +98,6 @@ namespace Peppermint.Util.Shader {
                 mat.renderQueue = 3000;
             }
 
-            state.SetFloatProp(guid, "_AlphaMode", mode);
-            pmFile.WriteJSON<MaterialMetaSerializable>(target, state.Serialize());
             EditorUtility.SetDirty(mat);
         }
     }

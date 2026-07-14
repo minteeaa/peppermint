@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Text;
 using Peppermint.Util.Shader;
 using Peppermint.Util;
+using Peppermint.Struct;
 
 namespace Peppermint {
     public class Frontend : ShaderGUI
@@ -310,29 +311,27 @@ namespace Peppermint {
         {
             Material material = materialEditor.target as Material;
 
-            UpdateInternal(material, properties);
-
             MarkAttributes(materialEditor, properties);
-
-            UpdateKeywords(materialEditor, properties, material);
 
             if (!foldoutStates.ContainsKey(material))
                 foldoutStates[material] = new Dictionary<string, bool>();
+            EditorGUI.BeginChangeCheck();
 
             Folder root = BuildFolderTree(properties);
+
             EditorGUI.indentLevel = 0;
             DrawFolder(materialEditor, material, root, 0);
+
+            if (EditorGUI.EndChangeCheck()) {
+                foreach (Material mat in materialEditor.targets) {
+                    UpdateInternal(material, properties);
+                    UpdateKeywords(materialEditor, properties, material);
+                    TransparencyMode.Update(material);
+                }
+            }
             using (new GUILayout.HorizontalScope())
             {
                 material.renderQueue = EditorGUILayout.IntField("Render Queue", material.renderQueue);
-            }
-        }
-
-        public override void ValidateMaterial(Material mat) {
-            pmFile.doesDataDirExist(true);
-            pmFile.doesPersistDirExist(true);
-            if (TransparencyMode.IsChanged(mat)) {
-                TransparencyMode.Update(mat);
             }
         }
     }
