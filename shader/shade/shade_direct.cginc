@@ -1,6 +1,6 @@
 half3 sampleDirectSpecular(pmLightData ld, pmAnisotropyData ad)
 {
-    half3 Fr = 0;
+    half3 Fr = half3(0, 0, 0);
     #ifdef _PM_NDF_GGX
         #ifdef _PM_FT_ANISOTROPICS
             Fr = anisotropic(ld.h, ld.viewDir, ld.lightDir, ad.t, ad.b, ld.NoV, ld.NoH, ld.NoL, ld.LoH, ld.f0, _Roughness) * ld.energyCompensation;
@@ -13,7 +13,7 @@ half3 sampleDirectSpecular(pmLightData ld, pmAnisotropyData ad)
         half3 iso = isotropic(ld.NoH, ld.NoV, ld.LoH, ld.NoL, ld.f0, _Roughness) * ld.energyCompensation;
         Fr = lerp(isoCloth, iso, _Metallic);
     #endif
-
+    
     if (_ClampSpecular) 
         Fr = Fr / (1.0 + Fr);
 

@@ -37,12 +37,6 @@ float3 isotropic(float NoH, float NoV, float LoH, float NoL, float3 f0, float ro
 
     float3 Fr = (D * V) * F;
 
-    // blame vrchat and bloom usage
-    if (_ClampSpecular) 
-    {
-        Fr = Fr / (1.0 + Fr);
-    }
-
     return Fr;
 }
 
@@ -69,7 +63,10 @@ float3 isotropicCloth(float NoH, float NoV, float NoL, float roughness, float3 f
     float D = distributionCloth(NoH, roughness);
     float V = visibilityCloth(NoV, NoL);
     float3 F = f0;
-    return (D * V) * F;
+
+    float3 Fr = (D * V) * F;
+
+    return Fr;
 }
 
 half3 addEmission(in pmLightData ld)

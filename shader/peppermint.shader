@@ -45,25 +45,25 @@ Shader "mintea/peppermint"
 
         // wip uv tile discard (ui needs... work)
         // much inspiration from Poiyomi
-        [Toggle] _UDIMDiscardRow0_0("UV Tile Discard/0_0", Float) = 0
-        [Toggle] _UDIMDiscardRow0_1("UV Tile Discard/0_1", Float) = 0
-        [Toggle] _UDIMDiscardRow0_2("UV Tile Discard/0_2", Float) = 0
-        [Toggle] _UDIMDiscardRow0_3("UV Tile Discard/0_3", Float) = 0
+        [Toggle] _UDIMDiscardRow0_0("UV Tile Discard/0_0", Int) = 0
+        [Toggle] _UDIMDiscardRow0_1("UV Tile Discard/0_1", Int) = 0
+        [Toggle] _UDIMDiscardRow0_2("UV Tile Discard/0_2", Int) = 0
+        [Toggle] _UDIMDiscardRow0_3("UV Tile Discard/0_3", Int) = 0
 
-        [Toggle] _UDIMDiscardRow1_0("UV Tile Discard/1_0", Float) = 0
-        [Toggle] _UDIMDiscardRow1_1("UV Tile Discard/1_1", Float) = 0
-        [Toggle] _UDIMDiscardRow1_2("UV Tile Discard/1_2", Float) = 0
-        [Toggle] _UDIMDiscardRow1_3("UV Tile Discard/1_3", Float) = 0
+        [Toggle] _UDIMDiscardRow1_0("UV Tile Discard/1_0", Int) = 0
+        [Toggle] _UDIMDiscardRow1_1("UV Tile Discard/1_1", Int) = 0
+        [Toggle] _UDIMDiscardRow1_2("UV Tile Discard/1_2", Int) = 0
+        [Toggle] _UDIMDiscardRow1_3("UV Tile Discard/1_3", Int) = 0
 
-        [Toggle] _UDIMDiscardRow2_0("UV Tile Discard/2_0", Float) = 0
-        [Toggle] _UDIMDiscardRow2_1("UV Tile Discard/2_1", Float) = 0
-        [Toggle] _UDIMDiscardRow2_2("UV Tile Discard/2_2", Float) = 0
-        [Toggle] _UDIMDiscardRow2_3("UV Tile Discard/2_3", Float) = 0
+        [Toggle] _UDIMDiscardRow2_0("UV Tile Discard/2_0", Int) = 0
+        [Toggle] _UDIMDiscardRow2_1("UV Tile Discard/2_1", Int) = 0
+        [Toggle] _UDIMDiscardRow2_2("UV Tile Discard/2_2", Int) = 0
+        [Toggle] _UDIMDiscardRow2_3("UV Tile Discard/2_3", Int) = 0
 
-        [Toggle] _UDIMDiscardRow3_0("UV Tile Discard/3_0", Float) = 0
-        [Toggle] _UDIMDiscardRow3_1("UV Tile Discard/3_1", Float) = 0
-        [Toggle] _UDIMDiscardRow3_2("UV Tile Discard/3_2", Float) = 0
-        [Toggle] _UDIMDiscardRow3_3("UV Tile Discard/3_3", Float) = 0
+        [Toggle] _UDIMDiscardRow3_0("UV Tile Discard/3_0", Int) = 0
+        [Toggle] _UDIMDiscardRow3_1("UV Tile Discard/3_1", Int) = 0
+        [Toggle] _UDIMDiscardRow3_2("UV Tile Discard/3_2", Int) = 0
+        [Toggle] _UDIMDiscardRow3_3("UV Tile Discard/3_3", Int) = 0
 
         _LightVolumesBias("Extra/Light Volumes Bias", Float) = 0
         [Toggle(_DOMINANTDIRSPECULARS_ON)] _DominantDirSpeculars("Extra/Dominant Dir Speculars", Float) = 0
@@ -96,6 +96,9 @@ Shader "mintea/peppermint"
 		[Enum(UnityEngine.Rendering.StencilOp)] _StencilFailOp ("Rendering/Stencil/Stencil Fail Op", Float) = 0
 		[Enum(UnityEngine.Rendering.StencilOp)] _StencilZFailOp ("Rendering/Stencil/Stencil ZFail Op", Float) = 0
 		[Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompareFunction ("Rendering/Stencil/Stencil Compare Function", Float) = 8
+
+        [Toggle] _Debug ("Debug/Enable", Int) = 0
+        [Enum(Diffuse, 0, Specular, 1, Indirect Diffuse, 2, Indirect Specular, 3, LV Specular, 4)] _DebugMode ("Debug/Output", Int) = 0
 	}
     CustomEditor "Peppermint.Frontend" 
     SubShader
@@ -125,6 +128,7 @@ Shader "mintea/peppermint"
             #pragma shader_feature_local _PM_FT_SUBSURFACE
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
             #pragma shader_feature_local _PM_FT_UVTILEDISCARD
+            #pragma shader_feature_local _PM_DEBUG
             #define PASS_BASE_URP
             #define PIPE_URP
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -168,6 +172,7 @@ Shader "mintea/peppermint"
             #pragma shader_feature_local _PM_FT_SUBSURFACE
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
             #pragma shader_feature_local _PM_FT_UVTILEDISCARD
+            #pragma shader_feature_local _PM_DEBUG
             #define PASS_BASE
             #define PIPE_BIRP
             #include "UnityCG.cginc"
@@ -202,6 +207,7 @@ Shader "mintea/peppermint"
             #pragma shader_feature_local _PM_FT_SUBSURFACE
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
             #pragma shader_feature_local _PM_FT_UVTILEDISCARD
+            #pragma shader_feature_local _PM_DEBUG
             #define PASS_ADD
             #define PIPE_BIRP
             #include "UnityCG.cginc"

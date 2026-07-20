@@ -256,6 +256,8 @@ namespace Peppermint {
             ToggleKeyword(utd == 1, "_PM_FT_UVTILEDISCARD", material);
             float ems = material.GetFloat("_EmissionsEnable");
             ToggleKeyword(ems == 1, "_PM_FT_EMISSIONS", material);
+            float debug = material.GetFloat("_Debug");
+            ToggleKeyword(debug == 1, "_PM_DEBUG", material);
         }
 
         private void TexCheck(bool condition, string guid, string property, MaterialProperty[] properties)

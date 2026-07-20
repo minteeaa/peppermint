@@ -8,19 +8,27 @@ float3 sampleAPV(in pmInput i, in pmLightData ld)
     #endif
 }
 
-half3 sampleIndirectDiffuse(in pmInput i, in pmLightData ld) 
+void prepareSH(in pmInput i, inout pmLightData ld, out float3 L0, out float3 L1r, out float3 L1g, out float3 L1b) {
+    L0 = 0; L1r = 0; L1g = 0; L1b = 0;
+    float3 specular = 0;
+    [branch] 
+    if (!LightVolumesEnabled()) {
+        LV_SampleLightProbe(L0, L1r, L1g, L1b);
+    } else {
+        LV_LightVolumeRegularSH(i.worldPos + 0, L0, L1r, L1g, L1b);
+        LV_LightVolumeAdditiveSH(i.worldPos + 0, L0, L1r, L1g, L1b);
+        LV_PointLightVolumeSHSpecular(i.worldPos, _NormalWS, i.viewDir, 1 - _perceptualRoughness, ld.f0, 3, L0, L1r, L1g, L1b, specular);
+    }
+    ld.lvSpecular = specular;
+}
+
+half3 sampleIndirectDiffuse(in pmInput i, in pmLightData ld,
+    float3 L0, float3 L1r, float3 L1g, float3 L1b) 
 {
     // half3 sh = ShadeSH9(half4(_NormalWS.x, _NormalWS.y, _NormalWS.z, 1));
     // return (sh * _Albedo / PI) * _Occlusion;
     half3 diffuseAdd = half3(0, 0, 0);
     #if defined(PIPE_BIRP)
-        float3 L0 = float3(0, 0, 0);
-        float3 L1r = float3(0, 0, 0);
-        float3 L1g = float3(0, 0, 0);
-        float3 L1b = float3(0, 0, 0);
-
-        // don't use LightVolumeSHSpecular because we don't need specular here
-        LightVolumeSH(i.worldPos, L0, L1r, L1g, L1b, 0, _NormalWS, 3);
         diffuseAdd = EvaluateSH1(_NormalWS, L0, L1r, L1g, L1b);
     #elif defined(PIPE_URP)
         diffuseAdd = SampleSH(_NormalWS);
@@ -39,12 +47,6 @@ half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyDat
     half3 r = ld.r;
     #if defined(PIPE_BIRP)
         half4 envReflection = 0;
-        float3 lvSpecular = float3(0, 0, 0);
-        float3 L0 = float3(0, 0, 0);
-        float3 L1r = float3(0, 0, 0);
-        float3 L1g = float3(0, 0, 0);
-        float3 L1b = float3(0, 0, 0);
-
         half mip = _perceptualRoughness * UNITY_SPECCUBE_LOD_STEPS;
 
         #ifdef _PM_FT_ANISOTROPICS
@@ -52,9 +54,6 @@ half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyDat
         #endif
         envReflection = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, r, mip);
         specularAdd += DecodeHDR(envReflection, unity_SpecCube0_HDR);
-        
-        LightVolumeSHSpecular(i.worldPos, L0, L1r, L1g, L1b, lvSpecular, ld.f0, 1 - _perceptualRoughness, _NormalWS, ld.viewDir, 0, 3);
-        specularAdd += lvSpecular;
     #elif defined(PIPE_URP)
         #ifdef _PM_FT_ANISOTROPICS
             r = lerp(ld.r, ad.r, _AnisotropicsStrength);
@@ -67,10 +66,12 @@ half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyDat
 
 void prepareIndirect(in pmInput i, inout pmLightData ld, in pmAnisotropyData ad)
 {
+    float3 L0, L1r, L1g, L1b = float3(0, 0, 0);
+    prepareSH(i, ld, L0, L1r, L1g, L1b);
     #if defined(PROBE_VOLUMES_L1) || defined(PROBE_VOLUMES_L2)
         ld.indirectDiffuse += sampleAPV(i, ld);
     #else
-        ld.indirectDiffuse += sampleIndirectDiffuse(i, ld);
+        ld.indirectDiffuse += sampleIndirectDiffuse(i, ld, L0, L1r, L1g, L1b);
     #endif
     ld.indirectSpecular += sampleIndirectSpecular(i, ld, ad);
 }
@@ -89,7 +90,7 @@ half3 shadeIndirectSpecular(in pmLightData ld) {
         E = EGGX;
     #endif
 
-    half3 Fr = ld.indirectSpecular * E;
+    half3 Fr = ld.indirectSpecular * E + ld.lvSpecular;
     return F * Fr * ComputeSpecularAO(ld.NoV, _Occlusion, _Roughness);
 }
 

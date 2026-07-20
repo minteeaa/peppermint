@@ -265,5 +265,7 @@ pmLightData prepareLightData(in pmInput i)
     ld.dfg = sampleDFG(ld.NoV);
     ld.energyCompensation = computeEnergyCompensation(ld.dfg, ld.f0);
 
+    ld.lvSpecular = half3(0, 0, 0);
+
     return ld;
 }

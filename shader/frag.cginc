@@ -31,7 +31,18 @@
             color += addEmission(ld);
         #endif
 
-        half4 col = half4(color, _Alpha);
+        half4 col = half4(0, 0, 0, 0);
+
+        #if defined(_PM_DEBUG)
+            [branch]
+            if (_DebugMode == 0) col = half4(shadeDirectDiffuse(ld), _Alpha);
+            else if (_DebugMode == 1) col = half4(shadeDirectSpecular(ld), _Alpha);
+            else if (_DebugMode == 2) col = half4(ld.indirectDiffuse, _Alpha);
+            else if (_DebugMode == 3) col = half4(ld.indirectSpecular, _Alpha);
+            else if (_DebugMode == 4) col = half4(ld.lvSpecular, _Alpha);
+        #else
+            col = half4(color, _Alpha);
+        #endif
         col.r += samplerDefault.r;
 
         UNITY_APPLY_FOG(i.fogCoord, col);

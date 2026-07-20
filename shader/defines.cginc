@@ -92,6 +92,9 @@ float _UDIMDiscardRow0_1;
 float _UDIMDiscardRow0_2;
 float _UDIMDiscardRow0_3;
 
+bool _Debug;
+uint _DebugMode;
+
 #if defined(PIPE_URP)
     CBUFFER_END;
 #endif
@@ -146,6 +149,7 @@ struct pmLightData
     half3 indirectDiffuse;
     half3 directSpecular;
     half3 directDiffuse;
+    half3 lvSpecular;
 };
 
 // todo: update vertexlighting for birp
@@ -198,7 +202,7 @@ struct pmVertexLightData
         float3 worldPos : TEXCOORD5;
         float3 localPos : TEXCOORD6;
         bool useVertexLights : TEXCOORD7;
-        //UNITY_FOG_COORDS(8)
+        UNITY_FOG_COORDS(8)
         UNITY_VERTEX_OUTPUT_STEREO
     };
     #include "./pipe/birp.cginc"
