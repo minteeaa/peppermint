@@ -19,61 +19,62 @@ INIT_TEX2D_NOSAMPLER(_AlphaTex);
 INIT_TEX2D_NOSAMPLER(_ORMTexture);
 INIT_TEX2D_NOSAMPLER(_BumpMap);
 INIT_TEX2D_NOSAMPLER(_EmissionMap);
-float3 _Diffuse;
-float3 _Albedo;
-float _Alpha;
-float _Roughness;
-float _perceptualRoughness;
-float _Occlusion;
-float _Metallic;
-float3 _Normal;
-float3 _NormalWS;
-float3 _Subsurface;
-float3 _Emission;
-float _UDIMDiscardUV;
+
+half3 _Normal;
+half3 _NormalWS;
+half3 _Diffuse;
+half3 _Albedo;
+half3 _Subsurface;
+half3 _Emission;
+half _Alpha;
+half _Roughness;
+half _Occlusion;
+half _Metallic;
+half _perceptualRoughness;
+int _UDIMDiscardUV;
 
 #if defined(PIPE_URP)
     CBUFFER_START(UnityPerMaterial);
 #endif
 
-float4 _ditherPattern_TexelSize;
-float _pm_nk_hasalpha;
+half4 _ditherPattern_TexelSize;
+half _pm_nk_hasalpha;
 
-float4 _MainTex_ST;
-float4 _MainTex_TexelSize;
+half4 _MainTex_ST;
+half4 _MainTex_TexelSize;
 float4 _DiffuseHDR;
 
-float4 _AlphaTex_ST;
-float4 _AlphaTex_TexelSize;
-float _AlphaMode;
+half4 _AlphaTex_ST;
+half4 _AlphaTex_TexelSize;
+int _AlphaMode;
 half _Cutoff;
-float _EnableAlphaDither;
-float _DitherAmount;
-float _DitherBias;
+bool _EnableAlphaDither;
+half _DitherAmount;
+half _DitherBias;
 
-float4 _ORMTexture_ST;
-float4 _ORMTexure_TexelSize;
-float _RoughnessStrength;
-float _MetallicStrength;
-float _AOStrength;
+half4 _ORMTexture_ST;
+half4 _ORMTexure_TexelSize;
+half _RoughnessStrength;
+half _MetallicStrength;
+half _AOStrength;
 
-float4 _BumpMap_ST;
-float4 _BumpMap_TexelSize;
-float _NormalStrength;
+half4 _BumpMap_ST;
+half4 _BumpMap_TexelSize;
+half _NormalStrength;
 
-float _FlipBackfaceNormals;
-float _ClampSpecular;
+bool _FlipBackfaceNormals;
+bool _ClampSpecular;
 
 float4 _SubsurfaceColor;
 
-float _EmissionsEnable;
-float4 _EmissionMap_ST;
-float4 _EmissionMap_TexelSize;
-float _EmissionStrength;
-float3 _EmissionColor;
+bool _EmissionsEnable;
+half4 _EmissionMap_ST;
+half4 _EmissionMap_TexelSize;
+half _EmissionStrength;
+float4 _EmissionColor;
 
-float _AnisotropicEnable;
-float _AnisotropicsStrength;
+bool _AnisotropicEnable;
+half _AnisotropicsStrength;
 
 float _UDIMDiscardRow3_0;
 float _UDIMDiscardRow3_1;

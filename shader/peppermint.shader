@@ -2,11 +2,11 @@ Shader "mintea/peppermint"
 {
 	Properties
 	{
-        [HideInInspector] _dfg("GGX DFG", 2D) = "white" {}
+        [HideInInspector] [SingleLineTexture] _dfg("GGX DFG", 2D) = "white" {}
         [HideInInspector] [SingleLineTexture] _dfg_cloth("Cloth DFG", 2D) = "white" {}
-        [HideInInspector] _samplerDefault("", 2D) = "white" {}
-        [HideInInspector] _ditherPattern("Dither", 2D) = "white" {}
-        [HideInInspector] _pm_nk_hasalpha("_hasalpha", Range(0, 1)) = 0
+        [HideInInspector] [SingleLineTexture] _samplerDefault("", 2D) = "white" {}
+        [HideInInspector] [SingleLineTexture] _ditherPattern("Dither", 2D) = "white" {}
+        [HideInInspector] [SingleLineTexture] _pm_nk_hasalpha("_hasalpha", Range(0, 1)) = 0
 
 		[SingleLineTexture] _ORMTexture("Main/Textures/ORM", 2D) = "white" {}
         [SingleLineTexture][Normal] _BumpMap("Main/Textures/Normal Map", 2D) = "bump" {}
@@ -14,34 +14,34 @@ Shader "mintea/peppermint"
         [SingleLineTexture] _MainTex("Main/Textures/Diffuse", 2D) = "white" {}
         [SingleLineTexture] _AlphaTex("Main/Textures/Alpha", 2D) = "white" {}
 
-        [Enum(Opaque, 0, Cutout, 1, TransClip, 2, Transparent, 3)] _AlphaMode ("Main/Alpha/Mode", Float) = 0
+        [Enum(Opaque, 0, Cutout, 1, TransClip, 2, Transparent, 3)] _AlphaMode ("Main/Alpha/Mode", Int) = 0
         _Cutoff("Main/Alpha/Cutoff", Range(0, 1)) = 0.5
-        [Toggle] _EnableAlphaDither("Main/Alpha/Dither", Float) = 0
+        [Toggle] _EnableAlphaDither("Main/Alpha/Dither", Int) = 0
         _DitherAmount("Main/Alpha/Dither Amount", Range(0, 1)) = 0.5
         _DitherBias("Main/Alpha/Dither Bias", Range(0, 1)) = 0.5
 
-        [Enum(GGX, 0, Charlie, 1)] _DiffuseNDF("Main/BRDF/NDF/Diffuse NDF", Float) = 0
+        [Enum(GGX, 0, Charlie, 1)] _DiffuseNDF("Main/BRDF/NDF/Diffuse NDF", Int) = 0
         [hdr] _SheenColor ("Main/BRDF/NDF/Sheen Color", color) = (1,1,1,1)
 
-        [Toggle] _SubsurfaceEnable("Main/BRDF/Subsurface Scattering/Enable", Float) = 0
+        [Toggle] _SubsurfaceEnable("Main/BRDF/Subsurface Scattering/Enable", Int) = 0
         [hdr] _SubsurfaceColor ("Main/BRDF/Subsurface Scattering/Color", color) = (1,1,1,1)
 
-        [Toggle] _AnisotropicsEnable("Main/BRDF/Anisotropics/Enable", Float) = 0
+        [Toggle] _AnisotropicsEnable("Main/BRDF/Anisotropics/Enable", Int) = 0
         _AnisotropicsStrength("Main/BRDF/Anisotropics/Strength", Range(-1, 1)) = 1
 
 		_AOStrength("Main/AO Strength", Range(0, 1)) = 1
         _RoughnessStrength("Main/Roughness", Range(0, 1)) = 1
         _MetallicStrength("Main/Metallic", Range(0, 1)) = 1
 		_NormalStrength("Main/Normal Strength", Range(0, 5)) = 1
-        [Toggle] _ClampSpecular("Main/Clamp Specular", Float) = 0
+        [Toggle] _ClampSpecular("Main/Clamp Specular", Int) = 0
 
-        [Toggle] _EmissionsEnable("Emission/Enable", Float) = 0
+        [Toggle] _EmissionsEnable("Emission/Enable", Int) = 0
         [hdr] _EmissionColor("Emission/Color", color) = (1,1,1,1)
         [SingleLineTexture] _EmissionMap("Emission/Mask", 2D) = "white" {}
         _EmissionStrength("Emission/Strength", Range(0, 1)) = 0
 
-        [Toggle] _UVTileDiscardEnable("UV Tile Discard/Enable", Float) = 0
-        [Enum(UV0, 0, UV1, 1, UV2, 2, UV3, 3)] _UDIMDiscardUV("UV Tile Discard/UV", Float) = 0
+        [Toggle] _UVTileDiscardEnable("UV Tile Discard/Enable", Int) = 0
+        [Enum(UV0, 0, UV1, 1, UV2, 2, UV3, 3)] _UDIMDiscardUV("UV Tile Discard/UV", Int) = 0
 
         // wip uv tile discard (ui needs... work)
         // much inspiration from Poiyomi
@@ -65,15 +65,12 @@ Shader "mintea/peppermint"
         [Toggle] _UDIMDiscardRow3_2("UV Tile Discard/3_2", Int) = 0
         [Toggle] _UDIMDiscardRow3_3("UV Tile Discard/3_3", Int) = 0
 
-        _LightVolumesBias("Extra/Light Volumes Bias", Float) = 0
-        [Toggle(_DOMINANTDIRSPECULARS_ON)] _DominantDirSpeculars("Extra/Dominant Dir Speculars", Float) = 0
-
-        [Toggle] _FlipBackfaceNormals("Rendering/Flip Backface Normals", Float) = 1
-        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Rendering/Cull", Float) = 2
-		[Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Rendering/ZTest", Float) = 4
+        [Toggle] _FlipBackfaceNormals("Rendering/Flip Backface Normals", Int) = 1
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Rendering/Cull", Int) = 2
+		[Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Rendering/ZTest", Int) = 4
 		[Toggle] _ZWrite ("Rendering/ZWrite", Int) = 1
-        [Toggle] _ZClip ("Rendering/ZClip", Float) = 1
-        [Enum(Simple, 0, Front Face vs Back Face, 1)] _StencilType ("Rendering/Stencil Type", Float) = 0
+        [Toggle] _ZClip ("Rendering/ZClip", Int) = 1
+        [Enum(Simple, 0, Front Face vs Back Face, 1)] _StencilType ("Rendering/Stencil Type", Int) = 0
 
 		[Enum(UnityEngine.Rendering.BlendOp)] _BlendOp ("Rendering/Blending/RGB/RGB Blend Op", Int) = 0
 		[Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Rendering/Blending/RGB/RGB Source Blend", Int) = 1
@@ -92,10 +89,10 @@ Shader "mintea/peppermint"
 		_StencilRef ("Rendering/Stencil/Stencil Reference Value", Range(0, 255)) = 0
 		_StencilReadMask ("Rendering/Stencil/Stencil ReadMask Value", Range(0, 255)) = 255
 		_StencilWriteMask ("Rendering/Stencil/Stencil WriteMask Value", Range(0, 255)) = 255
-		[Enum(UnityEngine.Rendering.StencilOp)] _StencilPassOp ("Rendering/Stencil/Stencil Pass Op", Float) = 0
-		[Enum(UnityEngine.Rendering.StencilOp)] _StencilFailOp ("Rendering/Stencil/Stencil Fail Op", Float) = 0
-		[Enum(UnityEngine.Rendering.StencilOp)] _StencilZFailOp ("Rendering/Stencil/Stencil ZFail Op", Float) = 0
-		[Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompareFunction ("Rendering/Stencil/Stencil Compare Function", Float) = 8
+		[Enum(UnityEngine.Rendering.StencilOp)] _StencilPassOp ("Rendering/Stencil/Stencil Pass Op", Int) = 0
+		[Enum(UnityEngine.Rendering.StencilOp)] _StencilFailOp ("Rendering/Stencil/Stencil Fail Op", Int) = 0
+		[Enum(UnityEngine.Rendering.StencilOp)] _StencilZFailOp ("Rendering/Stencil/Stencil ZFail Op", Int) = 0
+		[Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompareFunction ("Rendering/Stencil/Stencil Compare Function", Int) = 8
 
         [Toggle] _Debug ("Debug/Enable", Int) = 0
         [Enum(Diffuse, 0, Specular, 1, Indirect Diffuse, 2, Indirect Specular, 3, LV Specular, 4)] _DebugMode ("Debug/Output", Int) = 0
