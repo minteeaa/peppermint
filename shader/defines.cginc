@@ -94,7 +94,7 @@ float _UDIMDiscardRow0_2;
 float _UDIMDiscardRow0_3;
 
 bool _Debug;
-uint _DebugMode;
+int _DebugMode;
 
 #if defined(PIPE_URP)
     CBUFFER_END;
