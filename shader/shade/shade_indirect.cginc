@@ -37,7 +37,12 @@ half3 sampleIndirectDiffuse(in pmInput i, in pmLightData ld,
     return diffuseAdd;
 }
 
-half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyData ad)
+float computeSpecularAO(in float NoV, in float ao, in float roughness)
+{
+    return clamp(pow(abs(NoV + ao), exp2(-16.0 * roughness - 1.0)) - 1.0 + ao, 0.0, 1.0);
+}
+
+half3 sampleEnvironmentIBL(in pmInput i, in pmLightData ld, in pmAnisotropyData ad, half roughness)
 {
     // Filament spec, 5.3.4.4: lod = roughness^(1/2) = perceptualRoughness
     // most or all IBL / indirect specular samples should use `perceptualRoughness` over
@@ -47,7 +52,7 @@ half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyDat
     half3 r = ld.r;
     #if defined(PIPE_BIRP)
         half4 envReflection = 0;
-        half mip = _perceptualRoughness * UNITY_SPECCUBE_LOD_STEPS;
+        half mip = roughness * UNITY_SPECCUBE_LOD_STEPS;
 
         #ifdef _PM_FT_ANISOTROPICS
             r = lerp(ld.r, ad.r, _AnisotropicsStrength);
@@ -58,55 +63,66 @@ half3 sampleIndirectSpecular(in pmInput i, in pmLightData ld, in pmAnisotropyDat
         #ifdef _PM_FT_ANISOTROPICS
             r = lerp(ld.r, ad.r, _AnisotropicsStrength);
         #endif 
-        specularAdd = GlossyEnvironmentReflection(normalize(r), i.worldPos, _perceptualRoughness, 1, i.screenPosUV);
+        specularAdd = GlossyEnvironmentReflection(normalize(r), i.worldPos, roughness, 1, i.screenPosUV);
     #endif
 
     return specularAdd;
+}
+
+void evaluateSubsurfaceIBL(inout float3 Fd, in pmLightData ld) 
+{
+    #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
+        Fd *= saturate(_Subsurface + ld.NoV);
+    #endif
+}
+
+void evaluateSheenIBL(inout half3 Fr, inout half3 Fd, in pmInput i, in pmLightData ld, in pmAnisotropyData ad) 
+{
+    #if !defined(_PM_NDF_CHARLIE) && !defined(_PM_FT_SUBSURFACE)
+        #if defined(_PM_FT_SHEEN)
+            Fr *= ld.sheenScaling;
+            Fd *= ld.sheenScaling;
+
+            half3 reflectance = ld.sheenDFG * _SheenColor;
+            reflectance *= computeSpecularAO(ld.NoV, _Occlusion, ld.sheenRoughness);
+            Fr += reflectance * sampleEnvironmentIBL(i, ld, ad, ld.sheenPerceptualRoughness);
+        #endif
+    #endif
 }
 
 void prepareIndirect(in pmInput i, inout pmLightData ld, in pmAnisotropyData ad)
 {
     float3 L0, L1r, L1g, L1b = float3(0, 0, 0);
     prepareSH(i, ld, L0, L1r, L1g, L1b);
+
     #if defined(PROBE_VOLUMES_L1) || defined(PROBE_VOLUMES_L2)
         ld.indirectDiffuse += sampleAPV(i, ld);
     #else
         ld.indirectDiffuse += sampleIndirectDiffuse(i, ld, L0, L1r, L1g, L1b);
     #endif
-    ld.indirectSpecular += sampleIndirectSpecular(i, ld, ad);
 }
 
-half3 shadeIndirectSpecular(in pmLightData ld) {
-    half3 h = uSafeNormalize(ld.r + ld.viewDir);
-    half LoH = saturate(dot(ld.r, h));
-    half3 F = fresnel(LoH, ld.f0);
-    
-    half3 E = half3(0, 0, 0);
-    half3 EGGX = lerp(ld.dfg.x, ld.dfg.y, ld.f0);
+half3 shadeIndirect(in pmInput i, in pmLightData ld, in pmAnisotropyData ad) {
+    half3 Fr, Fd = half3(0, 0, 0);
+    half3 ggx = lerp(ld.dfg.x, ld.dfg.y, ld.f0);
     #ifdef _PM_NDF_CHARLIE
-        half3 ECharlie = ld.f0 * ld.dfg.z;
-        E = lerp(ECharlie, EGGX, _Metallic);
+        half3 cloth = ld.f0 * ld.dfg.z;
+        half3 E = lerp(cloth, ggx, _Metallic);
     #else 
-        E = EGGX;
+        half3 E = ggx;
     #endif
 
-    half3 Fr = ld.indirectSpecular * E + ld.lvSpecular;
-    return F * Fr * ComputeSpecularAO(ld.NoV, _Occlusion, _Roughness);
-}
+    half3 diffuseAO = computeSpecularAO(ld.NoV, _Occlusion, _Roughness);
 
-half3 shadeIndirectDiffuse(in pmLightData ld) {
-    half3 E = half3(0, 0, 0);
-    half3 EGGX = lerp(ld.dfg.x, ld.dfg.y, ld.f0);
-    #ifdef _PM_NDF_CHARLIE
-        half3 ECharlie = ld.f0 * ld.dfg.z;
-        E = lerp(ECharlie, EGGX, _Metallic);
-    #else 
-        E = EGGX;
-    #endif
+    Fr = E * sampleEnvironmentIBL(i, ld, ad, _perceptualRoughness);
+    Fd = _Diffuse * ld.indirectDiffuse * (1.0 - E) * (pm_Fd_Lambert() * diffuseAO);
 
-    half3 Fd = 0;
-    Fd += _Diffuse * ld.indirectDiffuse * (1.0 - E) * (pm_Fd_Lambert() * _Occlusion);
-    return Fd *= EvalSubsurfaceIBL(Fd, ld);
+    evaluateSubsurfaceIBL(Fd, ld);
+    evaluateSheenIBL(Fr, Fd, i, ld, ad);
+
+    Fr += ld.lvSpecular;
+
+    return Fr + Fd;
 }
 
 half3 addLTCGI(in pmInput i, in pmLightData ld)

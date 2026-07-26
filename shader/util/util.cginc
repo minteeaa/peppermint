@@ -9,6 +9,14 @@ inline half3 uSafeNormalize(half3 inVec)
     return inVec * rsqrt(dp3);
 }
 
+inline half max3 (half x, half y, half z) {
+    return max(x, max(y, z));
+}
+
+inline half max3 (half3 xyz) {
+    return max(xyz.x, max(xyz.y, xyz.z));
+}
+
 void initDefaultSampler(out float4 defaultSampler)
 {
     defaultSampler = TEX2D_SAMPLE_SAMPLER(_samplerDefault, sampler_samplerDefault, 0) * EPSILON;
@@ -62,20 +70,14 @@ float3 tangentToWorld(in pmInput i, in float3 input)
     return worldNormal;
 }
 
-half3 sampleDFG(half NoV)
+half3 sampleDFG(half roughness, half NoV)
 {
     // Filament spec, 5.3.4.6; same concept as 5.3.4.4: use perceptualRoughness
     // for DFG sampling as well as IBL
     
-    float2 dfgUV = float2(NoV, _perceptualRoughness);
-    #ifdef _PM_NDF_CHARLIE
-        half4 dfgCloth = TEX2D_SAMPLE_SAMPLER(_dfg_cloth, sampler_dfg_cloth_bilinear_clamp, dfgUV);
-        half4 dfgGGX = TEX2D_SAMPLE_SAMPLER(_dfg, sampler_dfg_bilinear_clamp, dfgUV);
-        half4 dfgSample = lerp(dfgCloth, dfgGGX, _Metallic);
-    #else
-        half4 dfgSample = TEX2D_SAMPLE_SAMPLER(_dfg, sampler_dfg_bilinear_clamp, dfgUV);
-    #endif
-    return dfgSample.rgb;
+    float2 dfgUV = float2(NoV, roughness);
+    half3 dfg = TEX2D_SAMPLE_SAMPLER(_dfg, sampler_dfg_bilinear_clamp, dfgUV).rgb;
+    return dfg;
 }
 
 half3 computeEnergyCompensation(half3 dfg, half3 f0)
@@ -110,7 +112,7 @@ half3 computeF0(in half3 albedo, in half3 metallic, in half reflectance)
     return albedo.rgb * metallic + (dielectricF0 * (1.0 - metallic));
 }
 
-float3 GetMainLightColor()
+float3 getMainLightColor()
 {
     #if defined(PIPE_BIRP)
         return _LightColor0.rgb;
@@ -119,10 +121,10 @@ float3 GetMainLightColor()
     #endif
 }
 
-float GetMainLightAttenuation() 
+float getMainLightAttenuation(in pmInput i) 
 {
     #if defined(PIPE_BIRP)
-        return _LightColor0.a;
+        return i.attenuation;
     #elif defined(PIPE_URP)
         return GetMainLight().shadowAttenuation;
     #endif
@@ -248,8 +250,8 @@ pmLightData prepareLightData(in pmInput i)
 
     ld.lightDir = lightDir;
     ld.viewDir = viewDir;
-    ld.mainLightColor = GetMainLightColor();
-    ld.mainLightAttenuation = GetMainLightAttenuation();
+    ld.mainLightColor = getMainLightColor();
+    ld.mainLightAttenuation = getMainLightAttenuation(i);
 
     ld.h = uSafeNormalize(ld.lightDir + ld.viewDir);
     ld.r = reflect(-ld.viewDir, _NormalWS);
@@ -259,13 +261,21 @@ pmLightData prepareLightData(in pmInput i)
 
     ld.NoH = clamp(dot(_NormalWS, ld.h), 0.0, 1.0);
     ld.LoH = clamp(dot(ld.lightDir, ld.h), 0.0, 1.0);
-    ld.illuminance = ld.mainLightColor * ld.NoL;
+    ld.luminance = ld.mainLightColor * ld.mainLightAttenuation;
+    ld.illuminance = ld.luminance * ld.NoL;
     ld.horizon = min(dot(ld.r, _NormalWS) + 1, 1);
     ld.f0 = computeF0(_Albedo, _Metallic, REFL_DI);
-    ld.dfg = sampleDFG(ld.NoV);
+    ld.dfg = sampleDFG(_perceptualRoughness, ld.NoV);
     ld.energyCompensation = computeEnergyCompensation(ld.dfg, ld.f0);
 
     ld.lvSpecular = half3(0, 0, 0);
+    
+    #if defined(_PM_FT_SHEEN)
+        ld.sheenPerceptualRoughness = _perceptualRoughness * max(_SheenRoughness, 0.001);
+        ld.sheenRoughness = _Roughness * max(_SheenRoughness, 0.001);
+        ld.sheenDFG = sampleDFG(ld.sheenPerceptualRoughness, ld.NoV).z;
+        ld.sheenScaling = clamp(1.0 - max3(_SheenColor) * ld.sheenDFG, 0.0, 1.0);
+    #endif
 
     return ld;
 }

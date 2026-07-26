@@ -35,9 +35,7 @@ float3 isotropic(float NoH, float NoV, float LoH, float NoL, float3 f0, float ro
     float V = visibility(NoV, NoL, roughness);
     float3 F = fresnel(LoH, f0);
 
-    float3 Fr = (D * V) * F;
-
-    return Fr;
+    return D * V * F;
 }
 
 float3 anisotropic(float3 h, float3 viewDir, float3 lightDir, float3 t, float3 b, float NoV, float NoH, float NoL, float LoH, float3 f0, float roughness) {
@@ -64,9 +62,14 @@ float3 isotropicCloth(float NoH, float NoV, float NoL, float roughness, float3 f
     float V = visibilityCloth(NoV, NoL);
     float3 F = f0;
 
-    float3 Fr = (D * V) * F;
+    return D * V * F;
+}
 
-    return Fr;
+float3 sheen(float roughness, float NoV, float NoL, float NoH) {
+    float D = distributionCloth(NoH, roughness);
+    float V = visibilityCloth(NoV, NoL);
+
+    return (D * V) * _SheenColor;
 }
 
 half3 addEmission(in pmLightData ld)

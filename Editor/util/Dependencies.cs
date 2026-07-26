@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using System.IO;
 using Peppermint.Util;
+using Peppermint.UI;
 
 namespace Peppermint.Util {
 
@@ -11,6 +13,8 @@ namespace Peppermint.Util {
         static Dependencies()
         {
             UpdateLTCGI();
+            Internal ops = new Internal();
+            EditorApplication.delayCall += ops.UpdateTextures;
         }
 
         static void UpdateLTCGI()

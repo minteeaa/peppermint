@@ -12,7 +12,6 @@ float4 samplerDefault;
 // todo: clean this up a lot 
 
 INIT_TEX2D_BCSAMPLER(_dfg);
-INIT_TEX2D_BCSAMPLER(_dfg_cloth);
 INIT_TEX2D_PWSAMPLER(_ditherPattern);
 INIT_TEX2D_NOSAMPLER(_MainTex);
 INIT_TEX2D_NOSAMPLER(_AlphaTex);
@@ -65,7 +64,11 @@ half _NormalStrength;
 bool _FlipBackfaceNormals;
 bool _ClampSpecular;
 
-float4 _SubsurfaceColor;
+float3 _SubsurfaceColor;
+
+bool _SheenEnable;
+float3 _SheenColor;
+float _SheenRoughness;
 
 bool _EmissionsEnable;
 half4 _EmissionMap_ST;
@@ -114,6 +117,7 @@ struct pmInput
     float2 uv3;
     float2 screenPosUV;
     bool useVertexLights;
+    float attenuation;
 };
 
 struct pmAnisotropyData
@@ -130,7 +134,8 @@ struct pmLightData
 
     half3 mainLightColor;
     half mainLightAttenuation;
-    half3 illuminance;
+    float3 luminance;
+    float3 illuminance;
     float3 energyCompensation;
 
     float3 lightDir;
@@ -151,6 +156,15 @@ struct pmLightData
     half3 directSpecular;
     half3 directDiffuse;
     half3 lvSpecular;
+
+    float3 worldPos;
+
+    #if defined(_PM_FT_SHEEN)
+        float sheenPerceptualRoughness;
+        float sheenRoughness;
+        half3 sheenScaling;
+        half sheenDFG;
+    #endif
 };
 
 // todo: update vertexlighting for birp
@@ -191,7 +205,7 @@ struct pmVertexLightData
 
     struct v2f
     {
-        float4 vertex : SV_POSITION;
+        float4 pos : SV_POSITION;
         float3 normal : NORMAL;
         float4 tangent : TANGENT;
         float4 color : COLOR;
@@ -202,8 +216,15 @@ struct pmVertexLightData
         float4 screenPos : TEXCOORD4;
         float3 worldPos : TEXCOORD5;
         float3 localPos : TEXCOORD6;
-        bool useVertexLights : TEXCOORD7;
-        UNITY_FOG_COORDS(8)
+        #if !defined(PASS_SHDW)
+            #if defined(PASS_BASE)
+                SHADOW_COORDS(7)
+            #elif defined(PASS_ADD)
+                LIGHTING_COORDS(7, 8)
+            #endif
+        #endif
+        UNITY_FOG_COORDS(9)
+        bool useVertexLights : TEXCOORD10;
         UNITY_VERTEX_OUTPUT_STEREO
     };
     #include "./pipe/birp.cginc"

@@ -55,6 +55,10 @@ void sampleProperties(in pmInput i)
         _Subsurface = _SubsurfaceColor.rgb;
     #endif
 
+    #ifdef _PM_FT_SHEEN
+        _SheenColor = _SheenColor.rgb;
+    #endif
+
     #ifdef _PM_FT_EMISSIONS
         _Emission = TEX2D_SAMPLE_SAMPLER(_EmissionMap, sampler_samplerDefault, i.uv0).rgb;
     #endif

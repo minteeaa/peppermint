@@ -55,7 +55,7 @@ float3 sampleVertexDiffuse(pmVertexLightData vld, pmLightData ld, int index)
     half3 vFd = diffuse(vld.NoL[index], LoV, ld.NoV, _Roughness, _Diffuse);
 
     #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
-        vFd *=pm_Fd_Wrap(dot(_NormalWS, vld.lightDir[index]), 0.5);
+        vFd *= pm_Fd_Wrap(dot(_NormalWS, vld.lightDir[index]), 0.5);
     #endif
 
     return _Diffuse * vFd;
@@ -74,9 +74,9 @@ half3 shadeDirectDiffuse(in pmLightData ld)
     half3 color = ld.directDiffuse;
     #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
         color *= saturate(_Subsurface + ld.NoL);
-        color *= ld.mainLightColor * ld.mainLightAttenuation;
+        color *= ld.luminance;
     #else
-        color *= ld.mainLightColor * ld.mainLightAttenuation * ld.NoL;
+        color *= ld.illuminance;
     #endif
     return color;
 }
@@ -109,8 +109,7 @@ half3 shadeDirectSpecular(in pmLightData ld)
 {
     if (ld.NoL <= 0) return 0;
 
-    half3 color = ld.directSpecular;
-    color *= ld.mainLightColor * ld.mainLightAttenuation * ld.NoL;
+    half3 color = ld.directSpecular * ld.illuminance;
     return color;
 }
 

@@ -7,21 +7,20 @@
         UNITY_INITIALIZE_OUTPUT(v2f, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-        o.vertex = UnityObjectToClipPos(v.vertex);
+        o.pos = UnityObjectToClipPos(v.vertex);
         o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
         o.normal = UnityObjectToWorldNormal(v.normal);
         o.tangent.xyz = UnityObjectToWorldDir(v.tangent.xyz);
         o.tangent.w = v.tangent.w;
         o.color = v.color;
         o.localPos = v.vertex;
-        o.screenPos = ComputeScreenPos(o.vertex);
+        o.screenPos = ComputeScreenPos(o.pos);
         o.uv0 = v.uv0;
         o.uv1 = v.uv1;
         o.uv2 = v.uv2;
         o.uv3 = v.uv3;
 
         // method from Poiyomi's udim discard
-
         #ifdef _PM_FT_UVTILEDISCARD
             float2 udim = 0;
 
@@ -51,7 +50,14 @@
             #endif
         #endif
 
-        //UNITY_TRANSFER_FOG(o, o.vertex);
+        UNITY_TRANSFER_FOG(o, o.vertex);
+        #if !defined(PASS_SHDW)
+            #if defined(PASS_BASE)
+                TRANSFER_SHADOW(o);
+            #elif defined(PASS_ADD)
+                TRANSFER_VERTEX_TO_FRAGMENT(o);
+            #endif
+        #endif
         return o;
     }
 #elif defined(PIPE_URP)

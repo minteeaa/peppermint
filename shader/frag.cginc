@@ -12,14 +12,13 @@
         pmLightData ld = prepareLightData(input);
         pmAnisotropyData ad = prepareAnisotropyData(ld, input);
         pmVertexLightData vld = prepareVertexLightData(input, ld);
-        
+
         prepareIndirect(input, ld, ad);
         prepareDirect(ld, ad);
 
         color += shadeDirectDiffuse(ld);
         color += shadeDirectSpecular(ld);
-        color += shadeIndirectSpecular(ld);
-        color += shadeIndirectDiffuse(ld);
+        color += shadeIndirect(input, ld, ad);
         color += shadeVertexDiffuse(vld, ld, input);
         color += shadeVertexSpecular(vld, ld, ad, input);
             
@@ -44,7 +43,6 @@
             col = half4(color, _Alpha);
         #endif
         col.r += samplerDefault.r;
-
         UNITY_APPLY_FOG(i.fogCoord, col);
         return col;
     }

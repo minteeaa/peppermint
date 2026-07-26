@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Text;
 using Peppermint.Util.Shader;
 using Peppermint.Util;
+using Peppermint.UI;
 
 namespace Peppermint {
     public class Frontend : ShaderGUI
@@ -28,6 +29,8 @@ namespace Peppermint {
         {
             public bool SingleLineTexture = false;
         }
+
+        public Internal ops = new Internal();
 
         private Dictionary<string, Prop> propAttributes = new Dictionary<string, Prop>();
         private static Dictionary<Material, Dictionary<string, bool>> foldoutStates = new Dictionary<Material, Dictionary<string, bool>>();
@@ -256,56 +259,10 @@ namespace Peppermint {
             ToggleKeyword(utd == 1, "_PM_FT_UVTILEDISCARD", material);
             float ems = material.GetFloat("_EmissionsEnable");
             ToggleKeyword(ems == 1, "_PM_FT_EMISSIONS", material);
+            float sheen = material.GetFloat("_SheenEnable");
+            ToggleKeyword(sheen == 1, "_PM_FT_SHEEN", material);
             float debug = material.GetFloat("_Debug");
             ToggleKeyword(debug == 1, "_PM_DEBUG", material);
-        }
-
-        private void TexCheck(bool condition, string guid, string property, MaterialProperty[] properties)
-        {
-            if (condition) 
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                Texture2D tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path); 
-                MaterialProperty prop = FindProperty(property, properties);
-                prop.textureValue = tex;
-            }
-        }
-
-        private void UpdateInternal(Material material, MaterialProperty[] properties) {
-                TexCheck(
-                    material.GetTexture("_ditherPattern") == null, 
-                    "481eb725641632748b7be205a1f60124",
-                    "_ditherPattern",
-                    properties
-                );
-
-                TexCheck(
-                    material.GetTexture("_samplerDefault") == null, 
-                    "1428608754793fb43b394b86fe5c8e20",
-                    "_samplerDefault",
-                    properties
-                );
-                    
-                TexCheck(
-                    material.GetTexture("_dfg_cloth") == null, 
-                    "3a4f51f7f57ed78428e302e36b886334",
-                    "_dfg_cloth",
-                    properties
-                );
-
-                TexCheck(
-                    material.GetTexture("_dfg_cloth").ToString() != "dfg_cloth", 
-                    "3a4f51f7f57ed78428e302e36b886334",
-                    "_dfg_cloth",
-                    properties
-                );
-
-                TexCheck(
-                    material.GetTexture("_dfg") == null, 
-                    "ce35b977c39365343afe7f912dd94827",
-                    "_dfg",
-                    properties
-                );
         }
 
         public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
@@ -328,7 +285,7 @@ namespace Peppermint {
 
             if (EditorGUI.EndChangeCheck()) {
                 foreach (Material mat in materialEditor.targets) {
-                    UpdateInternal(mat, properties);
+                    ops.UpdateInternal(mat, properties);
                     UpdateKeywords(materialEditor, properties, mat);
 
                     float alphaCurrent = mat.GetFloat("_AlphaMode");

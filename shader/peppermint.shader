@@ -2,8 +2,7 @@ Shader "mintea/peppermint"
 {
 	Properties
 	{
-        [HideInInspector] [SingleLineTexture] _dfg("GGX DFG", 2D) = "white" {}
-        [HideInInspector] [SingleLineTexture] _dfg_cloth("Cloth DFG", 2D) = "white" {}
+        [HideInInspector] [SingleLineTexture] _dfg("DFG", 2D) = "white" {}
         [HideInInspector] [SingleLineTexture] _samplerDefault("", 2D) = "white" {}
         [HideInInspector] [SingleLineTexture] _ditherPattern("Dither", 2D) = "white" {}
         [HideInInspector] [SingleLineTexture] _pm_nk_hasalpha("_hasalpha", Range(0, 1)) = 0
@@ -21,7 +20,10 @@ Shader "mintea/peppermint"
         _DitherBias("Main/Alpha/Dither Bias", Range(0, 1)) = 0.5
 
         [Enum(GGX, 0, Charlie, 1)] _DiffuseNDF("Main/BRDF/NDF/Diffuse NDF", Int) = 0
-        [hdr] _SheenColor ("Main/BRDF/NDF/Sheen Color", color) = (1,1,1,1)
+
+        [Toggle] _SheenEnable("Main/BRDF/Sheen/Enable", Int) = 0
+        [hdr] _SheenColor("Main/BRDF/Sheen/Color", color) = (1,1,1,1)
+        _SheenRoughness("Main/BRDF/Sheen/Roughness", Range(0, 1)) = 1
 
         [Toggle] _SubsurfaceEnable("Main/BRDF/Subsurface Scattering/Enable", Int) = 0
         [hdr] _SubsurfaceColor ("Main/BRDF/Subsurface Scattering/Color", color) = (1,1,1,1)
@@ -122,6 +124,7 @@ Shader "mintea/peppermint"
             #pragma multi_compile _ PROBE_VOLUMES_L1 PROBE_VOLUMES_L2
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
             #pragma shader_feature_local _PM_FT_EMISSIONS
+            #pragma shader_feature_local _PM_FT_SHEEN
             #pragma shader_feature_local _PM_FT_SUBSURFACE
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
             #pragma shader_feature_local _PM_FT_UVTILEDISCARD
@@ -166,6 +169,7 @@ Shader "mintea/peppermint"
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
             #pragma shader_feature_local _PM_FT_LTCGI
             #pragma shader_feature_local _PM_FT_EMISSIONS
+            #pragma shader_feature_local _PM_FT_SHEEN
             #pragma shader_feature_local _PM_FT_SUBSURFACE
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
             #pragma shader_feature_local _PM_FT_UVTILEDISCARD
@@ -174,6 +178,7 @@ Shader "mintea/peppermint"
             #define PIPE_BIRP
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
+            #include "AutoLight.cginc"
             #include "defines.cginc"
             ENDCG
         }
@@ -184,11 +189,9 @@ Shader "mintea/peppermint"
             Tags {"LightMode" = "ForwardAdd"}
             ZWrite Off
             ZClip [_ZClip]
-            Fog {Color (0,0,0,0)}
 
             Cull [_Cull]
             ZTest [_ZTest]
-
             BlendOp [_AddBlendOp], [_AddBlendOpAlpha]
             Blend [_AddSrcBlend] [_AddDstBlend], [_AddSrcBlendAlpha] [_AddDstBlendAlpha]
 
@@ -201,6 +204,7 @@ Shader "mintea/peppermint"
             #pragma shader_feature_local _ _PM_NDF_GGX _PM_NDF_CHARLIE
             #pragma shader_feature_local _PM_FT_LTCGI
             #pragma shader_feature_local _PM_FT_EMISSIONS
+            #pragma shader_feature_local _PM_FT_SHEEN
             #pragma shader_feature_local _PM_FT_SUBSURFACE
             #pragma shader_feature_local _PM_FT_ANISOTROPICS
             #pragma shader_feature_local _PM_FT_UVTILEDISCARD
@@ -209,6 +213,7 @@ Shader "mintea/peppermint"
             #define PIPE_BIRP
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
+            #include "AutoLight.cginc"
             #include "defines.cginc"
             ENDCG
         }
@@ -235,6 +240,7 @@ Shader "mintea/peppermint"
             #define PIPE_BIRP
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
+            #include "AutoLight.cginc"
             #include "defines.cginc"
             ENDCG
         }

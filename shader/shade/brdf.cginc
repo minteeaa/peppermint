@@ -115,17 +115,3 @@ float pm_Fd_Oren_Nayar(in float NoL, in float LoV, in float NoV, in float Rough,
 
     return NoL * (A2 + B2 * s / t);
 }
-
-float ComputeSpecularAO(in float NoV, in float ao, in float roughness)
-{
-    return clamp(pow(abs(NoV + ao), exp2(-16.0 * roughness - 1.0)) - 1.0 + ao, 0.0, 1.0);
-}
-
-float3 EvalSubsurfaceIBL(float3 Fd, in pmLightData ld) 
-{
-    #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
-        return saturate(_Subsurface + ld.NoV);
-    #else
-        return 1;
-    #endif
-}
