@@ -112,17 +112,16 @@ half3 shadeIndirect(in pmInput i, in pmLightData ld, in pmAnisotropyData ad) {
         half3 E = ggx;
     #endif
 
-    half3 diffuseAO = computeSpecularAO(ld.NoV, _Occlusion, _Roughness);
-
     Fr = E * sampleEnvironmentIBL(i, ld, ad, _perceptualRoughness);
-    Fd = _Diffuse * ld.indirectDiffuse * (1.0 - E) * (pm_Fd_Lambert() * diffuseAO);
+    Fr += ld.lvSpecular;
+    Fr *= computeSpecularAO(ld.NoV, _Occlusion, _Roughness);
+
+    Fd = _Diffuse * ld.indirectDiffuse * (1.0 - E) * (pm_Fd_Lambert() * _Occlusion);
 
     evaluateSubsurfaceIBL(Fd, ld);
     evaluateSheenIBL(Fr, Fd, i, ld, ad);
 
-    Fr += ld.lvSpecular;
-
-    return Fr + Fd;
+    return Fd + Fr;
 }
 
 half3 addLTCGI(in pmInput i, in pmLightData ld)
