@@ -45,7 +45,7 @@ namespace Peppermint.UI {
                 TexCheck(
                     material.GetTexture("_dfg") == null, 
                     "f383c55fb66a128fc8b511710bfa5acb",
-                    "_dfg_",
+                    "_dfg",
                     properties
                 );
 
