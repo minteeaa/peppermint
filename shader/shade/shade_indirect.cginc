@@ -72,7 +72,10 @@ half3 sampleEnvironmentIBL(in pmInput i, in pmLightData ld, in pmAnisotropyData 
 void evaluateSubsurfaceIBL(inout float3 Fd, in pmLightData ld) 
 {
     #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
-        Fd *= saturate(_Subsurface + ld.NoV);
+        float rim = pow(1.0 - ld.NoV, 2.0);
+        float vis = pm_Fd_Lambert() * rim;
+        float T = pm_Tr_Beer(ld.subsurfAbsorption, _Thickness); 
+        Fd += (_Diffuse * T * vis * _Subsurface * ld.indirectDiffuse) * _Occlusion;
     #endif
 }
 

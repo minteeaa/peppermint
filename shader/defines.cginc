@@ -18,6 +18,7 @@ INIT_TEX2D_NOSAMPLER(_AlphaTex);
 INIT_TEX2D_NOSAMPLER(_ORMTexture);
 INIT_TEX2D_NOSAMPLER(_BumpMap);
 INIT_TEX2D_NOSAMPLER(_EmissionMap);
+INIT_TEX2D_NOSAMPLER(_ThicknessMap);
 
 half3 _Normal;
 half3 _NormalWS;
@@ -65,6 +66,11 @@ bool _FlipBackfaceNormals;
 bool _ClampSpecular;
 
 float3 _SubsurfaceColor;
+half _SubsurfaceScatterDistance;
+half3 _SubsurfaceScatterColor;
+half4 _ThicknessMap_ST;
+half4 _ThicknessMap_TexelSize;
+float _Thickness;
 
 bool _SheenEnable;
 float3 _SheenColor;
@@ -164,6 +170,13 @@ struct pmLightData
         float sheenRoughness;
         half3 sheenScaling;
         half sheenDFG;
+    #endif
+
+    #if defined(_PM_FT_SUBSURFACE)
+        half3 subsurfMFP;
+        half3 subsurfAbsorption;
+        half3 subsurfScaling;
+        half subsurfDFG;
     #endif
 };
 

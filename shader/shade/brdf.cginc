@@ -94,8 +94,8 @@ float pm_Fd_Lambert() {
     return 1.0 / PI;
 }
 
-float pm_Fd_Wrap(float NoL, float w) {
-    return saturate((NoL + w) / pow(1.0 + w, 2.0));
+float pm_Fd_Wrap(float NoL, float atten) {
+    return saturate((NoL + atten) / pow(1.0 + atten, 2.0));
 }
 
 float pm_Fd_Oren_Nayar(in float NoL, in float LoV, in float NoV, in float Rough, in float3 Albedo)
@@ -115,3 +115,16 @@ float pm_Fd_Oren_Nayar(in float NoL, in float LoV, in float NoV, in float Rough,
 
     return NoL * (A2 + B2 * s / t);
 }
+
+/*
+    transmission impls
+ */
+
+float3 pm_Tr_Beer(float3 absorption, float distance)
+{
+    // Beer Absorption for Subsurface Scattering
+    // https://web.archive.org/web/20201030100400/http://www.lumipedia.org/index.php?title=Bouguer-Lambert-Beer_Absorption_Law
+
+    return exp(-absorption * distance);
+}
+

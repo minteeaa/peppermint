@@ -53,6 +53,7 @@ void sampleProperties(in pmInput i)
 
     #ifdef _PM_FT_SUBSURFACE
         _Subsurface = _SubsurfaceColor.rgb;
+        _Thickness = TEX2D_SAMPLE_SAMPLER(_ThicknessMap, sampler_samplerDefault, i.uv0).r;
     #endif
 
     #ifdef _PM_FT_SHEEN
@@ -62,6 +63,7 @@ void sampleProperties(in pmInput i)
     #ifdef _PM_FT_EMISSIONS
         _Emission = TEX2D_SAMPLE_SAMPLER(_EmissionMap, sampler_samplerDefault, i.uv0).rgb;
     #endif
+    
     
     _Albedo = (sampledMainTex.rgb * _DiffuseHDR.rgb) * _DiffuseHDR.a;
     _Roughness = _perceptualRoughness * _perceptualRoughness;

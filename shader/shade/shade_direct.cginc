@@ -43,9 +43,6 @@ half3 sampleVertexSpecular(pmVertexLightData vld, pmLightData ld, pmAnisotropyDa
 
 half3 sampleDirectDiffuse(in pmLightData ld) {
     half Fd = diffuse(ld.NoL, ld.LoV, ld.NoV, _Roughness, _Diffuse);
-    #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
-        Fd *= pm_Fd_Wrap(dot(_NormalWS, ld.lightDir), 0.5);
-    #endif
     return _Diffuse * Fd;
 }
 
@@ -53,10 +50,6 @@ float3 sampleVertexDiffuse(pmVertexLightData vld, pmLightData ld, int index)
 {
     half LoV = clamp(dot(vld.lightDir[index], ld.viewDir), 0.0, 1.0);
     half3 vFd = diffuse(vld.NoL[index], LoV, ld.NoV, _Roughness, _Diffuse);
-
-    #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
-        vFd *= pm_Fd_Wrap(dot(_NormalWS, vld.lightDir[index]), 0.5);
-    #endif
 
     return _Diffuse * vFd;
 }
@@ -69,16 +62,43 @@ void prepareDirect(inout pmLightData ld, in pmAnisotropyData ad)
 
 half3 shadeDirectDiffuse(in pmLightData ld)
 {
-    if (ld.NoL <= 0) return 0;
-
     half3 color = ld.directDiffuse;
     #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
-        color *= saturate(_Subsurface + ld.NoL);
         color *= ld.luminance;
     #else
         color *= ld.illuminance;
     #endif
     return color;
+}
+
+half3 shadeDirectSubsurface(in pmLightData ld)
+{
+    #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
+        float NoL = dot(-ld.lightDir, _NormalWS);
+        float rim = pow(1.0 - ld.NoV, 2.0);
+        float vis = pm_Fd_Wrap(NoL, 0.5) * rim;
+        float T = pm_Tr_Beer(ld.subsurfAbsorption, _Thickness);
+        return _Diffuse * T * vis * _Subsurface * ld.mainLightColor * ld.luminance;
+    #else
+        return 0;
+    #endif 
+}
+
+half3 shadeVertexSubsurface(in pmVertexLightData vld, in pmLightData ld)
+{
+    #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
+        half3 vertexSSS = 0;
+        for (int index = 0; index < 4; index++) {
+            float NoL = dot(-vld.lightDir[index], _NormalWS);
+            float rim = pow(1.0 - ld.NoV, 2.0);
+            float vis = pm_Fd_Wrap(vld.NoL[index], 0.5) * rim;
+            float T = pm_Tr_Beer(ld.subsurfAbsorption, _Thickness);
+            vertexSSS += _Diffuse * T * vis * _Subsurface * vld.color[index] * vld.attenuation;
+        }
+        return vertexSSS;
+    #else
+        return 0;
+    #endif 
 }
 
 half3 shadeVertexDiffuse(in pmVertexLightData vld, in pmLightData ld, in pmInput i)
@@ -91,7 +111,6 @@ half3 shadeVertexDiffuse(in pmVertexLightData vld, in pmLightData ld, in pmInput
             if (vld.NoL[index] > 0) {
                 half3 color = sampleVertexDiffuse(vld, ld, index);
                 #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
-                    color *= saturate(_Subsurface + vld.NoL[index]);
                     color *= vld.color[index] * vld.attenuation[index];
                 #else
                     color *= vld.color[index] * vld.attenuation[index] * vld.NoL[index];

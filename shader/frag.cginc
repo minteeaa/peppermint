@@ -21,6 +21,11 @@
         color += shadeIndirect(input, ld, ad);
         color += shadeVertexDiffuse(vld, ld, input);
         color += shadeVertexSpecular(vld, ld, ad, input);
+
+        color += shadeDirectSubsurface(ld);
+        #if defined(PASS_BASE)
+            if (i.useVertexLights) color += shadeVertexSubsurface(vld, ld);
+        #endif
             
         #if defined(_PM_FT_LTCGI)
             color += addLTCGI(input, ld);

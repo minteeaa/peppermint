@@ -26,7 +26,10 @@ Shader "mintea/peppermint"
         _SheenRoughness("Main/BRDF/Sheen/Roughness", Range(0, 1)) = 1
 
         [Toggle] _SubsurfaceEnable("Main/BRDF/Subsurface Scattering/Enable", Int) = 0
-        [hdr] _SubsurfaceColor ("Main/BRDF/Subsurface Scattering/Color", color) = (1,1,1,1)
+        [SingleLineTexture] _ThicknessMap ("Main/BRDF/Subsurface Scattering/Thickness", 2D) = "white" {}
+        _SubsurfaceColor ("Main/BRDF/Subsurface Scattering/Tint", color) = (1,1,1,1)
+        _SubsurfaceScatterColor ("Main/BRDF/Subsurface Scattering/Scatter Intensity", color) = (1,1,1,1)
+        _SubsurfaceScatterDistance ("Main/BRDF/Subsurface Scattering/Depth", Range(0.01, 1)) = 1
 
         [Toggle] _AnisotropicsEnable("Main/BRDF/Anisotropics/Enable", Int) = 0
         _AnisotropicsStrength("Main/BRDF/Anisotropics/Strength", Range(-1, 1)) = 1

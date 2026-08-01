@@ -277,5 +277,12 @@ pmLightData prepareLightData(in pmInput i)
         ld.sheenScaling = clamp(1.0 - max3(_SheenColor) * ld.sheenDFG, 0.0, 1.0);
     #endif
 
+    #if defined(_PM_FT_SUBSURFACE)
+        ld.subsurfMFP = _SubsurfaceScatterDistance * max(_SubsurfaceScatterColor, 0.01);
+        ld.subsurfAbsorption = 1.0 / ld.subsurfMFP;
+        ld.subsurfDFG = sampleDFG(_perceptualRoughness, ld.NoV).z;
+        ld.subsurfScaling = clamp(1.0 - max3(_Subsurface) * ld.subsurfDFG, 0.0, 1.0);
+    #endif
+
     return ld;
 }
