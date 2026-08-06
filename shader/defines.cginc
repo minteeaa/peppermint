@@ -19,6 +19,7 @@ INIT_TEX2D_NOSAMPLER(_ORMTexture);
 INIT_TEX2D_NOSAMPLER(_BumpMap);
 INIT_TEX2D_NOSAMPLER(_EmissionMap);
 INIT_TEX2D_NOSAMPLER(_ThicknessMap);
+INIT_TEX2D_NOSAMPLER(_SubsurfaceMask);
 
 half3 _Normal;
 half3 _NormalWS;
@@ -71,6 +72,9 @@ half3 _SubsurfaceScatterColor;
 half4 _ThicknessMap_ST;
 half4 _ThicknessMap_TexelSize;
 float _Thickness;
+half4 _SubsurfaceMask_ST;
+half4 _SubsurfaceMask_TexelSize;
+float _SubsurfaceStrength;
 
 bool _SheenEnable;
 float3 _SheenColor;

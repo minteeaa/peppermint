@@ -77,28 +77,34 @@ half3 shadeDirectSubsurface(in pmLightData ld)
         float NoL = dot(-ld.lightDir, _NormalWS);
         float rim = pow(1.0 - ld.NoV, 2.0);
         float vis = pm_Fd_Wrap(NoL, 0.5) * rim;
-        float T = pm_Tr_Beer(ld.subsurfAbsorption, _Thickness);
+        float3 T = pm_Tr_Beer(ld.subsurfAbsorption, _Thickness) * _SubsurfaceStrength;
         return _Diffuse * T * vis * _Subsurface * ld.mainLightColor * ld.luminance;
     #else
         return 0;
     #endif 
 }
 
-half3 shadeVertexSubsurface(in pmVertexLightData vld, in pmLightData ld)
+half3 shadeVertexSubsurface(in pmVertexLightData vld, in pmLightData ld, in pmInput i)
 {
-    #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
-        half3 vertexSSS = 0;
-        for (int index = 0; index < 4; index++) {
-            float NoL = dot(-vld.lightDir[index], _NormalWS);
-            float rim = pow(1.0 - ld.NoV, 2.0);
-            float vis = pm_Fd_Wrap(vld.NoL[index], 0.5) * rim;
-            float T = pm_Tr_Beer(ld.subsurfAbsorption, _Thickness);
-            vertexSSS += _Diffuse * T * vis * _Subsurface * vld.color[index] * vld.attenuation;
-        }
-        return vertexSSS;
+    #if defined(PASS_BASE)
+        if (!i.useVertexLights) return 0;
+
+        #if defined(_PM_NDF_CHARLIE) && defined(_PM_FT_SUBSURFACE)
+            half3 vertexSSS = 0;
+            for (int index = 0; index < 4; index++) {
+                float NoL = dot(-vld.lightDir[index], _NormalWS);
+                float rim = pow(1.0 - ld.NoV, 2.0);
+                float vis = pm_Fd_Wrap(vld.NoL[index], 0.5) * rim;
+                float3 T = pm_Tr_Beer(ld.subsurfAbsorption, _Thickness) * _SubsurfaceStrength;
+                vertexSSS += _Diffuse * T * vis * _Subsurface * vld.color[index] * vld.attenuation[index];
+            }
+            return vertexSSS;
+        #else
+            return 0;
+        #endif 
     #else
         return 0;
-    #endif 
+    #endif
 }
 
 half3 shadeVertexDiffuse(in pmVertexLightData vld, in pmLightData ld, in pmInput i)

@@ -27,6 +27,7 @@ Shader "mintea/peppermint"
 
         [Toggle] _SubsurfaceEnable("Main/BRDF/Subsurface Scattering/Enable", Int) = 0
         [SingleLineTexture] _ThicknessMap ("Main/BRDF/Subsurface Scattering/Thickness", 2D) = "white" {}
+        [SingleLineTexture] _SubsurfaceMask ("Main/BRDF/Subsurface Scattering/Mask", 2D) = "white" {}
         _SubsurfaceColor ("Main/BRDF/Subsurface Scattering/Tint", color) = (1,1,1,1)
         _SubsurfaceScatterColor ("Main/BRDF/Subsurface Scattering/Scatter Intensity", color) = (1,1,1,1)
         _SubsurfaceScatterDistance ("Main/BRDF/Subsurface Scattering/Depth", Range(0.01, 1)) = 1

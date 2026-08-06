@@ -54,6 +54,7 @@ void sampleProperties(in pmInput i)
     #ifdef _PM_FT_SUBSURFACE
         _Subsurface = _SubsurfaceColor.rgb;
         _Thickness = TEX2D_SAMPLE_SAMPLER(_ThicknessMap, sampler_samplerDefault, i.uv0).r;
+        _SubsurfaceStrength = TEX2D_SAMPLE_SAMPLER(_SubsurfaceMask, sampler_samplerDefault, i.uv0).r;
     #endif
 
     #ifdef _PM_FT_SHEEN
