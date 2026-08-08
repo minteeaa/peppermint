@@ -25,10 +25,6 @@
         color += shadeDirectSubsurface(ld);
         color += shadeVertexSubsurface(vld, ld, input);
             
-        #if defined(_PM_FT_LTCGI)
-            color += addLTCGI(input, ld);
-        #endif
-
         #if defined(_PM_FT_EMISSIONS)
             color += addEmission(ld);
         #endif

@@ -93,6 +93,15 @@ void evaluateSheenIBL(inout half3 Fr, inout half3 Fd, in pmInput i, in pmLightDa
     #endif
 }
 
+void evaluateLTCGI(inout half3 Fd, inout half3 Fr, in pmInput i, in pmLightData ld)
+{
+    #ifdef _PM_FT_LTCGI
+        accumulator_struct acc = GetLTCGI(i, ld);
+        Fd += acc.diffuse * _Diffuse;
+        Fr += acc.specular * ld.f0;
+    #endif
+}
+
 void prepareIndirect(in pmInput i, inout pmLightData ld, in pmAnisotropyData ad)
 {
     float3 L0, L1r, L1g, L1b = float3(0, 0, 0);
@@ -121,19 +130,10 @@ half3 shadeIndirect(in pmInput i, in pmLightData ld, in pmAnisotropyData ad) {
 
     Fd = _Diffuse * ld.indirectDiffuse * (1.0 - E) * (pm_Fd_Lambert() * _Occlusion);
 
+    evaluateLTCGI(Fd, Fr, i, ld);
+
     evaluateSubsurfaceIBL(Fd, ld);
     evaluateSheenIBL(Fr, Fd, i, ld, ad);
 
     return Fd + Fr;
-}
-
-half3 addLTCGI(in pmInput i, in pmLightData ld)
-{
-    #ifdef _PM_FT_LTCGI
-        accumulator_struct acc = GetLTCGI(i, ld);
-        half3 color = 0;
-        color += acc.diffuse * _Diffuse;
-        color += acc.specular * ld.f0;
-        return color;
-    #endif
 }
