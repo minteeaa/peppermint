@@ -61,8 +61,7 @@
 
         color += shadeDirectDiffuse(ld);
         color += shadeDirectSpecular(ld);
-        color += shadeIndirectSpecular(ld);
-        color += shadeIndirectDiffuse(ld);
+        color += shadeIndirect(input, ld, ad);
 
         #if defined(_PM_FT_EMISSIONS)
             color += addEmission(ld);

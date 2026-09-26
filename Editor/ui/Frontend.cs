@@ -30,7 +30,7 @@ namespace Peppermint {
             public bool SingleLineTexture = false;
         }
 
-        public Internal ops = new Internal();
+        public pmInternal ops = new pmInternal();
 
         private Dictionary<string, Prop> propAttributes = new Dictionary<string, Prop>();
         private static Dictionary<Material, Dictionary<string, bool>> foldoutStates = new Dictionary<Material, Dictionary<string, bool>>();

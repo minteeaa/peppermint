@@ -11,7 +11,7 @@ using Peppermint.Util;
 
 namespace Peppermint.UI {
 
-    public class Internal
+    public class pmInternal
     {
         public void TexCheck(bool condition, string guid, string property, MaterialProperty[] properties)
         {

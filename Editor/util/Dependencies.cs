@@ -13,7 +13,7 @@ namespace Peppermint.Util {
         static Dependencies()
         {
             UpdateLTCGI();
-            Internal ops = new Internal();
+            pmInternal ops = new pmInternal();
             EditorApplication.delayCall += ops.UpdateTextures;
         }
 
