@@ -3,7 +3,7 @@ Shader "mintea/peppermint"
 	Properties
 	{
         [HideInInspector] [SingleLineTexture] _dfg("DFG", 2D) = "white" {}
-        [HideInInspector] [SingleLineTexture] _samplerDefault("", 2D) = "white" {}
+        [HideInInspector] [SingleLineTexture] _samplerDefault("Sampler Default", 2D) = "white" {}
         [HideInInspector] [SingleLineTexture] _ditherPattern("Dither", 2D) = "white" {}
         [HideInInspector] [SingleLineTexture] _pm_nk_hasalpha("_hasalpha", Range(0, 1)) = 0
 

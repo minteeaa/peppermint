@@ -3,14 +3,15 @@ guid: 9f00f4b5a2f1c324781c9c8c07589b8c
 ShaderImporter:
   externalObjects: {}
   defaultTextures:
-  - _dfg: {fileID: 2800000, guid: ce35b977c39365343afe7f912dd94827, type: 3}
-  - _dfg_cloth: {fileID: 2800000, guid: f383c55fb66a128fc8b511710bfa5acb, type: 3}
+  - _dfg: {fileID: 2800000, guid: f383c55fb66a128fc8b511710bfa5acb, type: 3}
   - _samplerDefault: {fileID: 2800000, guid: 1428608754793fb43b394b86fe5c8e20, type: 3}
   - _ditherPattern: {fileID: 2800000, guid: 481eb725641632748b7be205a1f60124, type: 3}
   - _ORMTexture: {instanceID: 0}
   - _BumpMap: {instanceID: 0}
   - _MainTex: {instanceID: 0}
   - _AlphaTex: {instanceID: 0}
+  - _ThicknessMap: {instanceID: 0}
+  - _SubsurfaceMask: {instanceID: 0}
   - _EmissionMap: {instanceID: 0}
   nonModifiableTextures: []
   userData: 

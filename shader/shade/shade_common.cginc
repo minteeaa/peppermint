@@ -74,6 +74,6 @@ float3 sheen(float roughness, float NoV, float NoL, float NoH) {
 
 half3 addEmission(in pmLightData ld)
 {
-    half3 emission = _EmissionColor * _Emission * _EmissionStrength;
+    half3 emission = _EmissionColor.rgb * _Emission * _EmissionStrength;
     return emission * _EmissionsEnable;
 }
