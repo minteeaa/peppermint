@@ -86,7 +86,7 @@ namespace Peppermint {
 
             GUILayout.Space(style.margin.bottom);
 
-            editor.TexturePropertyMiniThumbnail(rect, prop, label, "Select a texture...");
+            editor.TexturePropertyMiniThumbnail(rect, prop, label, "Select a texture..."); 
         }
 
         private static GUIStyle SectionFoldoutStyle(int indent = 0)
@@ -125,7 +125,11 @@ namespace Peppermint {
             var root = new Folder{ name = "Root", path = "" };
             foreach (var prop in props)
             {
+                #if USING_URP
+                if (prop.propertyFlags != UnityEngine.Rendering.ShaderPropertyFlags.HideInInspector)
+                #else
                 if (prop.flags != MaterialProperty.PropFlags.HideInInspector)
+                #endif
                 {
                     string[] pathSplit = prop.displayName.Split('/');
                     Folder current = root;
